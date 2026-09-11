@@ -1,0 +1,3373 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>مدیریت کسب‌وکار</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --card:#ffffff; --primary:#2563eb; --primary-d:#1d4ed8;
+    --text:#1f2430; --muted:#6b7280; --border:#e5e7eb; --danger:#dc2626; --success:#16a34a;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Tahoma,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);}
+  header.topbar{
+    background:var(--primary);color:#fff;padding:12px 16px;
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:20;
+  }
+  header.topbar h1{font-size:16px;margin:0;}
+  #yearSelect, #monthSelect{
+    background:#fff;color:var(--text);border:none;border-radius:8px;
+    padding:6px 8px;font-size:13px;font-family:inherit;
+  }
+  main{padding:12px;padding-bottom:80px;max-width:680px;margin:0 auto;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
+  .card h2{font-size:14px;margin:0 0 10px;color:var(--muted);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
+  .stat .val{font-size:18px;font-weight:bold;}
+  .stat .label{font-size:12px;color:var(--muted);margin-top:4px;}
+  nav.bottom{
+    position:fixed;bottom:0;right:0;left:0;background:#fff;border-top:1px solid var(--border);
+    display:flex;overflow-x:auto;z-index:30;
+  }
+  nav.bottom button{
+    flex:0 0 auto;min-width:66px;background:none;border:none;padding:8px 6px;
+    font-family:inherit;font-size:11px;color:var(--muted);cursor:pointer;white-space:nowrap;
+  }
+  nav.bottom button.active{color:var(--primary);font-weight:bold;}
+  .page{display:none;}
+  .page.active{display:block;}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:20px 0;}
+  form.settings label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px;}
+  form.settings input,form.settings select{
+    width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
+    font-family:inherit;font-size:14px;
+  }
+  .btn{
+    display:inline-block;background:var(--primary);color:#fff;border:none;border-radius:8px;
+    padding:10px 16px;font-family:inherit;font-size:14px;cursor:pointer;margin-top:14px;
+  }
+  .btn:active{background:var(--primary-d);}
+  .toast{
+    position:fixed;bottom:70px;right:50%;transform:translateX(50%);
+    background:#1f2430;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;
+    opacity:0;transition:opacity .25s;pointer-events:none;z-index:50;
+  }
+  .toast.show{opacity:1;}
+
+  /* ---- مرحله ۲: کالا / تأمین‌کننده / خرید ---- */
+  .row-between{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;}
+  .search-box{
+    width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
+    font-family:inherit;font-size:14px;margin-bottom:10px;
+  }
+  .btn-sm{padding:6px 10px;font-size:12px;margin-top:0;border-radius:6px;}
+  .btn-outline{background:#fff;color:var(--primary);border:1px solid var(--primary);}
+  .btn-outline:active{background:#eef2ff;}
+  .btn-danger{background:#fff;color:var(--danger);border:1px solid var(--danger);}
+  .btn-danger:active{background:#fee2e2;}
+  .list-item{
+    background:var(--card);border:1px solid var(--border);border-radius:10px;
+    padding:10px 12px;margin-bottom:8px;
+  }
+  .list-item .li-title{font-size:14px;font-weight:bold;}
+  .list-item .li-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+  .list-item .li-actions{display:flex;gap:6px;margin-top:8px;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;margin-right:4px;}
+  .badge-ok{background:#dcfce7;color:var(--success);}
+  .badge-low{background:#fee2e2;color:var(--danger);}
+  .hidden{display:none !important;}
+  .line-item-row{
+    border:1px dashed var(--border);border-radius:8px;padding:10px;margin-bottom:8px;position:relative;
+  }
+  .line-item-row .li-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .line-item-row .li-remove{
+    position:absolute;top:6px;left:6px;background:none;border:none;color:var(--danger);
+    font-size:16px;cursor:pointer;padding:2px 6px;
+  }
+  .li-amount{font-size:12px;color:var(--muted);margin-top:6px;text-align:left;}
+  .date-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .cost-grid label{grid-column:1/-1;margin:6px 0 0;}
+
+  /* ---- مرحله ۶: فیلترهای پیشرفته / CSV / پشتیبان‌گیری ---- */
+  .filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .filter-bar select,.filter-bar input{
+    flex:1 1 120px;min-width:100px;padding:8px;border:1px solid var(--border);
+    border-radius:8px;font-family:inherit;font-size:12px;
+  }
+  .filter-bar .btn-sm{flex:0 0 auto;}
+  .filter-actions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .backup-box{
+    background:var(--card);border:1px solid var(--border);border-radius:10px;
+    padding:14px;margin-bottom:12px;
+  }
+  .backup-box p{font-size:12px;color:var(--muted);margin:6px 0 10px;line-height:1.8;}
+  .summary-box{
+    background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:10px;font-size:13px;
+  }
+  .summary-box div{display:flex;justify-content:space-between;padding:2px 0;}
+
+  /* ---- مرحله ۳: فروش و فاکتور ---- */
+  .si-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .stock-warn{color:var(--danger);font-size:11px;margin-top:4px;}
+  .status-badge{background:#e0f2fe;color:#0369a1;}
+  .invoice-box{
+    background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;font-size:13px;
+  }
+  .invoice-box h3{margin:0 0 4px;font-size:16px;}
+  .invoice-box .inv-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-bottom:10px;}
+  .invoice-box table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+  .invoice-box th,.invoice-box td{border:1px solid var(--border);padding:6px;text-align:center;}
+  .invoice-box tfoot td{font-weight:bold;background:#f8fafc;}
+  .invoice-sign{margin-top:30px;display:flex;flex-wrap:wrap;justify-content:space-around;align-items:flex-end;font-size:12px;color:var(--muted);gap:10px;}
+  .invoice-sign .sign-box{border-top:1px solid var(--border);padding-top:6px;width:100px;text-align:center;}
+  .invoice-brand{text-align:center;}
+  .invoice-brand img{width:30mm;max-width:90px;height:auto;display:block;margin:0 auto 4px;}
+  .invoice-brand span{font-size:10px;color:var(--muted);}
+  #invoicePrintArea{display:none;}
+  @media print{
+    body > header, body > nav, body > main, #toast{ display:none !important; }
+    #invoicePrintArea{
+      display:block !important;position:fixed;top:0;right:0;left:0;background:#fff;padding:16px;
+    }
+  }
+
+  /* ---- مرحله ۴: مشتریان و سفارش‌ها ---- */
+  .status-new{background:#e0f2fe;color:#0369a1;}
+  .status-confirmed{background:#fef9c3;color:#854d0e;}
+  .status-prep{background:#fef3c7;color:#92400e;}
+  .status-ready{background:#dbeafe;color:#1d4ed8;}
+  .status-delivered{background:#dcfce7;color:var(--success);}
+  .status-cancelled{background:#fee2e2;color:var(--danger);}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
+  .detail-stat{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;}
+  .detail-stat .v{font-weight:bold;font-size:14px;}
+  .detail-stat .l{font-size:11px;color:var(--muted);margin-top:2px;}
+  .hist-item{border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:8px;font-size:13px;}
+  .hist-item .items-line{font-size:12px;color:var(--muted);margin-top:4px;}
+
+  /* ---- مرحله ۵: داشبورد کامل، گزارش‌ها ---- */
+  .stat.clickable{cursor:pointer;}
+  .stat.clickable:active{background:#eef2ff;}
+  .report-subnav{display:flex;overflow-x:auto;gap:6px;padding:2px;}
+  .report-subnav button{
+    flex:0 0 auto;background:#eef2ff;color:var(--primary);border:none;border-radius:20px;
+    padding:7px 14px;font-size:12px;font-family:inherit;white-space:nowrap;cursor:pointer;
+  }
+  .report-subnav button.active{background:var(--primary);color:#fff;}
+  .report-tab{display:none;}
+  .report-tab.active{display:block;}
+  table.report-table{width:100%;border-collapse:collapse;font-size:12px;min-width:560px;}
+  table.report-table th, table.report-table td{border:1px solid var(--border);padding:6px 8px;text-align:center;white-space:nowrap;}
+  table.report-table thead th{background:#f8fafc;}
+  table.report-table tfoot td{font-weight:bold;background:#f8fafc;}
+  .bar-chart{display:flex;align-items:flex-end;gap:4px;height:120px;margin-top:6px;overflow-x:auto;}
+  .bar-chart .bar-col{flex:0 0 auto;width:20px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .bar-chart .bar{width:14px;background:var(--primary);border-radius:3px 3px 0 0;min-height:2px;}
+  .bar-chart .bar-label{font-size:9px;color:var(--muted);margin-top:3px;}
+  .chart-title{font-size:12px;color:var(--muted);margin:10px 0 2px;}
+  .loyalty-badge-VIP{background:#fef3c7;color:#92400e;}
+  .loyalty-badge-loyal{background:#dcfce7;color:var(--success);}
+  .loyalty-badge-active{background:#e0f2fe;color:#0369a1;}
+  .loyalty-badge-low{background:#f3f4f6;color:var(--muted);}
+  .loyalty-badge-inactive{background:#fee2e2;color:var(--danger);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1 id="bizNameTitle">مدیریت کسب‌وکار</h1>
+  <div style="display:flex;gap:6px;">
+    <select id="yearSelect"></select>
+    <select id="monthSelect"></select>
+  </div>
+</header>
+
+<main>
+
+  <!-- داشبورد -->
+  <section class="page active" id="page-dashboard">
+    <div class="grid">
+      <div class="stat clickable" onclick="drillDown('sales')"><div class="val" id="dashSalesTotal">۰ تومان</div><div class="label">فروش</div></div>
+      <div class="stat clickable" onclick="drillDown('purchases')"><div class="val" id="dashPurchaseTotal">۰ تومان</div><div class="label">خرید</div></div>
+      <div class="stat clickable" onclick="drillDown('directCost')"><div class="val" id="dashDirectCost">۰ تومان</div><div class="label">هزینه مستقیم خرید</div></div>
+      <div class="stat clickable" onclick="drillDown('expenses')"><div class="val" id="dashGeneralExpense">۰ تومان</div><div class="label">هزینه عمومی</div></div>
+      <div class="stat"><div class="val" id="dashCogs">۰ تومان</div><div class="label">بهای تمام‌شده فروش</div></div>
+      <div class="stat clickable" onclick="drillDown('grossProfit')"><div class="val" id="dashGrossProfit">۰ تومان</div><div class="label">سود ناخالص</div></div>
+      <div class="stat clickable" onclick="drillDown('netProfit')"><div class="val" id="dashNetProfit">۰ تومان</div><div class="label">سود خالص</div></div>
+      <div class="stat"><div class="val" id="dashMargin">٪۰</div><div class="label">حاشیه سود خالص</div></div>
+      <div class="stat"><div class="val" id="dashCustomerCount">۰</div><div class="label">تعداد مشتری</div></div>
+      <div class="stat"><div class="val" id="dashSupplierCount">۰</div><div class="label">تعداد تأمین‌کننده</div></div>
+      <div class="stat"><div class="val" id="dashProductCount">۰</div><div class="label">تعداد کالا</div></div>
+      <div class="stat"><div class="val" id="dashInvoiceCount">۰</div><div class="label">تعداد فاکتور فروش</div></div>
+      <div class="stat"><div class="val" id="dashStockTotal">۰</div><div class="label">مجموع موجودی</div></div>
+    </div>
+
+    <div class="card">
+      <h2>روند ماهانه (سال انتخاب‌شده در فیلتر بالا)</h2>
+      <div id="dashCharts"></div>
+    </div>
+
+    <div class="card hidden" id="dashDrilldownCard">
+      <div class="row-between">
+        <h2 style="margin:0;" id="dashDrilldownTitle">جزئیات</h2>
+        <button class="btn btn-sm btn-outline" id="closeDrilldownBtn">بستن</button>
+      </div>
+      <div id="dashDrilldownContent"></div>
+    </div>
+  </section>
+
+  <!-- سایر صفحات: placeholder برای مراحل بعدی -->
+  <!-- خریدها -->
+  <section class="page" id="page-purchases">
+    <div class="card">
+      <div class="row-between"><h2 style="margin:0;">ثبت خرید جدید</h2></div>
+      <form id="purchaseForm" class="settings">
+        <label>شماره خرید</label>
+        <input type="text" id="p_number">
+
+        <label>تاریخ خرید (شمسی)</label>
+        <div class="date-grid">
+          <select id="p_day"></select>
+          <select id="p_month"></select>
+          <select id="p_year"></select>
+        </div>
+
+        <label>تأمین‌کننده</label>
+        <select id="p_supplier"></select>
+
+        <label>کیفیت این خرید</label>
+        <select id="p_quality">
+          <option value="">— ثبت نشده —</option>
+          <option value="عالی">عالی</option>
+          <option value="خوب">خوب</option>
+          <option value="متوسط">متوسط</option>
+          <option value="ضعیف">ضعیف</option>
+        </select>
+
+        <h2 style="margin:16px 0 8px;">اقلام خرید</h2>
+        <div id="lineItemsWrap"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="addLineItemBtn">+ افزودن قلم کالا</button>
+
+        <h2 style="margin:16px 0 8px;">هزینه‌های مستقیم خرید</h2>
+        <div class="cost-grid">
+          <label>تاکسی مبدأ</label><input type="number" class="dc-input" id="dc_taxiOrigin" value="0">
+          <label>اتوبوس</label><input type="number" class="dc-input" id="dc_bus" value="0">
+          <label>تاکسی مقصد</label><input type="number" class="dc-input" id="dc_taxiDest" value="0">
+          <label>باربری</label><input type="number" class="dc-input" id="dc_freight" value="0">
+          <label>وانت/کامیون</label><input type="number" class="dc-input" id="dc_truck" value="0">
+          <label>بارگیری</label><input type="number" class="dc-input" id="dc_loading" value="0">
+          <label>تخلیه</label><input type="number" class="dc-input" id="dc_unloading" value="0">
+          <label>انبار</label><input type="number" class="dc-input" id="dc_warehouse" value="0">
+          <label>بسته‌بندی</label><input type="number" class="dc-input" id="dc_packing" value="0">
+          <label>سایر</label><input type="number" class="dc-input" id="dc_other" value="0">
+        </div>
+
+        <div class="summary-box" id="purchaseSummary">
+          <div><span>جمع خرید کالاها:</span><span id="sumItems">۰ تومان</span></div>
+          <div><span>جمع هزینه‌های مستقیم:</span><span id="sumDirect">۰ تومان</span></div>
+          <div><b>بهای تمام‌شده کل:</b><b id="sumTotal">۰ تومان</b></div>
+        </div>
+
+        <button type="submit" class="btn">ثبت خرید</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="row-between"><h2 style="margin:0;">خریدهای ثبت‌شده</h2><button class="btn btn-sm btn-outline" id="purchasesCsvBtn">خروجی CSV</button></div>
+      <div class="filter-bar">
+        <select id="pf_supplier"><option value="">همه تأمین‌کنندگان</option></select>
+        <input type="number" id="pf_min" placeholder="حداقل مبلغ">
+        <input type="number" id="pf_max" placeholder="حداکثر مبلغ">
+        <input type="text" id="pf_from" placeholder="از تاریخ (۱۴۰۵/۰۱/۰۱)">
+        <input type="text" id="pf_to" placeholder="تا تاریخ (۱۴۰۵/۱۲/۲۹)">
+        <button type="button" class="btn btn-sm btn-outline" id="pf_reset">پاک کردن فیلترها</button>
+      </div>
+      <div id="purchasesList"></div>
+    </div>
+  </section>
+
+  <!-- فروش‌ها -->
+  <section class="page" id="page-sales">
+    <div class="card">
+      <div class="row-between"><h2 style="margin:0;" id="saleFormTitle">ثبت فروش جدید</h2></div>
+      <form id="saleForm" class="settings">
+        <input type="hidden" id="s_id">
+        <label>شماره فاکتور</label>
+        <input type="text" id="s_number">
+
+        <label>تاریخ فروش (شمسی)</label>
+        <div class="date-grid">
+          <select id="s_day"></select>
+          <select id="s_month"></select>
+          <select id="s_year"></select>
+        </div>
+
+        <label>مشتری</label>
+        <select id="s_customer"></select>
+        <div id="s_customerQuickAdd" class="hidden" style="margin-top:8px;padding:10px;border:1px dashed var(--border);border-radius:8px;">
+          <label style="margin-top:0;">نام مشتری جدید</label>
+          <input type="text" id="s_customerQuickName">
+          <label>تلفن</label>
+          <input type="text" id="s_customerQuickPhone">
+          <button type="button" class="btn btn-sm" id="s_customerQuickAddBtn" style="margin-top:8px;">افزودن و انتخاب</button>
+        </div>
+        <input type="hidden" id="s_legacyName">
+        <input type="hidden" id="s_orderId">
+
+        <h2 style="margin:16px 0 8px;">اقلام فروش</h2>
+        <div id="saleLineItemsWrap"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="addSaleLineItemBtn">+ افزودن قلم کالا</button>
+
+        <label>توضیحات</label>
+        <input type="text" id="s_notes">
+
+        <div class="summary-box" id="saleSummary">
+          <div><span>جمع فروش:</span><span id="sSubtotal">۰ تومان</span></div>
+          <div><span>جمع تخفیف:</span><span id="sDiscount">۰ تومان</span></div>
+          <div><b>فروش خالص:</b><b id="sNet">۰ تومان</b></div>
+          <div><span>بهای تمام‌شده کالای فروش‌رفته:</span><span id="sCogs">۰ تومان</span></div>
+          <div><b>سود ناخالص:</b><b id="sGrossProfit">۰ تومان</b></div>
+          <div><span>حاشیه سود:</span><span id="sMargin">٪۰</span></div>
+        </div>
+
+        <div class="row-between" style="margin-top:14px;">
+          <button type="submit" class="btn">ثبت فروش</button>
+          <button type="button" class="btn btn-outline hidden" id="cancelSaleEditBtn">لغو ویرایش</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="row-between"><h2 style="margin:0;">فروش‌های ثبت‌شده</h2><button class="btn btn-sm btn-outline" id="salesCsvBtn">خروجی CSV</button></div>
+      <div class="filter-bar">
+        <select id="sf_customer"><option value="">همه مشتریان</option></select>
+        <input type="number" id="sf_min" placeholder="حداقل مبلغ">
+        <input type="number" id="sf_max" placeholder="حداکثر مبلغ">
+        <input type="text" id="sf_from" placeholder="از تاریخ (۱۴۰۵/۰۱/۰۱)">
+        <input type="text" id="sf_to" placeholder="تا تاریخ (۱۴۰۵/۱۲/۲۹)">
+        <button type="button" class="btn btn-sm btn-outline" id="sf_reset">پاک کردن فیلترها</button>
+      </div>
+      <div id="salesList"></div>
+    </div>
+
+    <div class="card hidden" id="invoiceViewCard">
+      <div class="row-between">
+        <h2 style="margin:0;">مشاهده فاکتور</h2>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" id="printInvoiceBtn">چاپ فاکتور</button>
+          <button class="btn btn-sm btn-outline" id="closeInvoiceBtn">بستن</button>
+        </div>
+      </div>
+      <div class="invoice-box" id="invoiceViewContent"></div>
+    </div>
+  </section>
+
+  <!-- سفارش‌ها -->
+  <section class="page" id="page-orders">
+    <div class="card">
+      <div class="row-between"><h2 style="margin:0;" id="orderFormTitle">ثبت سفارش جدید</h2></div>
+      <form id="orderForm" class="settings">
+        <input type="hidden" id="o_id">
+        <label>شماره سفارش</label>
+        <input type="text" id="o_number">
+
+        <label>تاریخ سفارش (شمسی)</label>
+        <div class="date-grid">
+          <select id="o_day"></select>
+          <select id="o_month"></select>
+          <select id="o_year"></select>
+        </div>
+
+        <label>مشتری</label>
+        <select id="o_customer"></select>
+        <div id="o_customerQuickAdd" class="hidden" style="margin-top:8px;padding:10px;border:1px dashed var(--border);border-radius:8px;">
+          <label style="margin-top:0;">نام مشتری جدید</label>
+          <input type="text" id="o_customerQuickName">
+          <label>تلفن</label>
+          <input type="text" id="o_customerQuickPhone">
+          <button type="button" class="btn btn-sm" id="o_customerQuickAddBtn" style="margin-top:8px;">افزودن و انتخاب</button>
+        </div>
+
+        <label>تلفن مشتری</label>
+        <input type="text" id="o_customerPhone">
+
+        <h2 style="margin:16px 0 8px;">اقلام سفارش</h2>
+        <div id="orderLineItemsWrap"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="addOrderLineItemBtn">+ افزودن قلم کالا</button>
+
+        <label>تاریخ تحویل مورد انتظار (شمسی)</label>
+        <div class="date-grid">
+          <select id="o_d_day"></select>
+          <select id="o_d_month"></select>
+          <select id="o_d_year"></select>
+        </div>
+
+        <label>محل تحویل</label>
+        <input type="text" id="o_deliveryLocation">
+
+        <label>هزینه ارسال</label>
+        <input type="number" id="o_shippingCost" value="0">
+
+        <label>وضعیت</label>
+        <select id="o_status">
+          <option value="جدید">جدید</option>
+          <option value="تأیید شده">تأیید شده</option>
+          <option value="در حال آماده‌سازی">در حال آماده‌سازی</option>
+          <option value="آماده تحویل">آماده تحویل</option>
+          <option value="تحویل شده">تحویل شده</option>
+          <option value="لغو شده">لغو شده</option>
+        </select>
+
+        <label>توضیحات</label>
+        <input type="text" id="o_notes">
+
+        <div class="summary-box" id="orderSummary">
+          <div><span>جمع اقلام:</span><span id="oSubtotal">۰ تومان</span></div>
+          <div><span>جمع تخفیف:</span><span id="oDiscount">۰ تومان</span></div>
+          <div><span>هزینه ارسال:</span><span id="oShipping">۰ تومان</span></div>
+          <div><b>مبلغ کل سفارش:</b><b id="oTotal">۰ تومان</b></div>
+        </div>
+
+        <div class="row-between" style="margin-top:14px;">
+          <button type="submit" class="btn">ثبت سفارش</button>
+          <button type="button" class="btn btn-outline hidden" id="cancelOrderEditBtn">لغو ویرایش</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="row-between"><h2 style="margin:0;">سفارش‌های ثبت‌شده</h2><button class="btn btn-sm btn-outline" id="ordersCsvBtn">خروجی CSV</button></div>
+      <div class="filter-bar">
+        <select id="of_status">
+          <option value="">همه وضعیت‌ها</option>
+          <option>جدید</option><option>تأیید شده</option><option>در حال آماده‌سازی</option>
+          <option>آماده تحویل</option><option>تحویل شده</option><option>لغو شده</option>
+        </select>
+        <select id="of_customer"><option value="">همه مشتریان</option></select>
+        <input type="number" id="of_min" placeholder="حداقل مبلغ">
+        <input type="number" id="of_max" placeholder="حداکثر مبلغ">
+        <button type="button" class="btn btn-sm btn-outline" id="of_reset">پاک کردن فیلترها</button>
+      </div>
+      <div id="ordersList"></div>
+    </div>
+  </section>
+
+  <!-- کالاها -->
+  <section class="page" id="page-products">
+    <div class="card">
+      <div class="row-between">
+        <h2 style="margin:0;">کالاها</h2>
+        <button class="btn btn-sm" id="showProductFormBtn">+ کالای جدید</button>
+      </div>
+      <input type="text" class="search-box" id="productSearch" placeholder="جست‌وجوی نام یا کد کالا...">
+      <div class="filter-bar">
+        <select id="pr_stockFilter">
+          <option value="">همه موجودی‌ها</option>
+          <option value="in">موجود</option>
+          <option value="low">کمبود موجودی</option>
+          <option value="out">بدون موجودی</option>
+        </select>
+        <input type="number" id="pr_priceMin" placeholder="حداقل قیمت فروش">
+        <input type="number" id="pr_priceMax" placeholder="حداکثر قیمت فروش">
+        <button type="button" class="btn btn-sm btn-outline" id="pr_filterReset">پاک کردن فیلترها</button>
+        <button type="button" class="btn btn-sm btn-outline" id="productsCsvBtn">خروجی CSV</button>
+      </div>
+      <div id="productsList"></div>
+    </div>
+
+    <div class="card hidden" id="productFormCard">
+      <h2 id="productFormTitle">کالای جدید</h2>
+      <form class="settings" id="productForm">
+        <input type="hidden" id="pr_id">
+        <label>نام کالا</label>
+        <input type="text" id="pr_name" required>
+        <label>کد کالا</label>
+        <input type="text" id="pr_code">
+        <label>دسته‌بندی</label>
+        <input type="text" id="pr_category">
+        <label>واحد</label>
+        <input type="text" id="pr_unit" placeholder="عدد / کیلوگرم / کارتن ...">
+        <label>موجودی اولیه</label>
+        <input type="number" id="pr_initialStock" value="0">
+        <label>حداقل موجودی</label>
+        <input type="number" id="pr_minStock" value="0">
+        <label>قیمت خرید</label>
+        <input type="number" id="pr_purchasePrice" value="0">
+        <label>قیمت فروش</label>
+        <input type="number" id="pr_salePrice" value="0">
+        <label>توضیحات</label>
+        <input type="text" id="pr_description">
+        <div class="row-between" style="margin-top:14px;">
+          <button type="submit" class="btn">ذخیره کالا</button>
+          <button type="button" class="btn btn-outline" id="cancelProductForm">انصراف</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- مشتریان -->
+  <!-- مشتریان -->
+  <section class="page" id="page-customers">
+    <div class="card">
+      <div class="row-between">
+        <h2 style="margin:0;">مشتریان</h2>
+        <button class="btn btn-sm" id="showCustomerFormBtn">+ مشتری جدید</button>
+      </div>
+      <input type="text" class="search-box" id="customerSearch" placeholder="جست‌وجوی نام یا تلفن...">
+      <div id="customersList"></div>
+    </div>
+
+    <div class="card hidden" id="customerFormCard">
+      <h2 id="customerFormTitle">مشتری جدید</h2>
+      <form class="settings" id="customerForm">
+        <input type="hidden" id="cu_id">
+        <label>نام</label>
+        <input type="text" id="cu_name" required>
+        <label>تلفن</label>
+        <input type="text" id="cu_phone">
+        <label>آدرس</label>
+        <input type="text" id="cu_address">
+        <label>توضیحات</label>
+        <input type="text" id="cu_description">
+        <div class="row-between" style="margin-top:14px;">
+          <button type="submit" class="btn">ذخیره</button>
+          <button type="button" class="btn btn-outline" id="cancelCustomerForm">انصراف</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card hidden" id="customerDetailCard">
+      <div class="row-between">
+        <h2 style="margin:0;">جزئیات مشتری</h2>
+        <button class="btn btn-sm btn-outline" id="closeCustomerDetailBtn">بستن</button>
+      </div>
+      <div id="customerDetailContent"></div>
+    </div>
+  </section>
+
+  <!-- تأمین‌کنندگان -->
+  <section class="page" id="page-suppliers">
+    <div class="card">
+      <div class="row-between">
+        <h2 style="margin:0;">تأمین‌کنندگان</h2>
+        <button class="btn btn-sm" id="showSupplierFormBtn">+ تأمین‌کننده جدید</button>
+      </div>
+      <input type="text" class="search-box" id="supplierSearch" placeholder="جست‌وجوی نام یا تلفن...">
+      <div id="suppliersList"></div>
+    </div>
+
+    <div class="card hidden" id="supplierFormCard">
+      <h2 id="supplierFormTitle">تأمین‌کننده جدید</h2>
+      <form class="settings" id="supplierForm">
+        <input type="hidden" id="sp_id">
+        <label>نام</label>
+        <input type="text" id="sp_name" required>
+        <label>تلفن</label>
+        <input type="text" id="sp_phone">
+        <label>آدرس</label>
+        <input type="text" id="sp_address">
+        <label>توضیحات</label>
+        <input type="text" id="sp_description">
+        <div class="row-between" style="margin-top:14px;">
+          <button type="submit" class="btn">ذخیره</button>
+          <button type="button" class="btn btn-outline" id="cancelSupplierForm">انصراف</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- هزینه‌های عمومی -->
+  <section class="page" id="page-expenses">
+    <div class="card">
+      <div class="row-between"><h2 style="margin:0;" id="expenseFormTitle">ثبت هزینه عمومی</h2></div>
+      <form id="expenseForm" class="settings">
+        <input type="hidden" id="ex_id">
+        <label>تاریخ (شمسی)</label>
+        <div class="date-grid">
+          <select id="ex_day"></select>
+          <select id="ex_month"></select>
+          <select id="ex_year"></select>
+        </div>
+        <label>نوع هزینه</label>
+        <select id="ex_category">
+          <option>اجاره</option><option>حقوق</option><option>تلفن</option><option>اینترنت</option>
+          <option>سوخت</option><option>تعمیرات</option><option>تبلیغات</option>
+          <option>بسته‌بندی عمومی</option><option>تاکسی عمومی</option><option>سایر</option>
+        </select>
+        <label>مبلغ</label>
+        <input type="number" id="ex_amount" value="0" min="0">
+        <label>توضیحات</label>
+        <input type="text" id="ex_description">
+        <div class="row-between" style="margin-top:14px;">
+          <button type="submit" class="btn">ثبت هزینه</button>
+          <button type="button" class="btn btn-outline hidden" id="cancelExpenseEditBtn">لغو ویرایش</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="row-between"><h2 style="margin:0;">هزینه‌های ثبت‌شده</h2><button class="btn btn-sm btn-outline" id="expensesCsvBtn">خروجی CSV</button></div>
+      <input type="text" class="search-box" id="expenseSearch" placeholder="جست‌وجو در توضیحات...">
+      <div class="filter-bar">
+        <select id="expenseCategoryFilter">
+          <option value="">همه دسته‌ها</option>
+          <option>اجاره</option><option>حقوق</option><option>تلفن</option><option>اینترنت</option>
+          <option>سوخت</option><option>تعمیرات</option><option>تبلیغات</option>
+          <option>بسته‌بندی عمومی</option><option>تاکسی عمومی</option><option>سایر</option>
+        </select>
+        <input type="number" id="ef_min" placeholder="حداقل مبلغ">
+        <input type="number" id="ef_max" placeholder="حداکثر مبلغ">
+        <input type="text" id="ef_from" placeholder="از تاریخ (۱۴۰۵/۰۱/۰۱)">
+        <input type="text" id="ef_to" placeholder="تا تاریخ (۱۴۰۵/۱۲/۲۹)">
+        <button type="button" class="btn btn-sm btn-outline" id="ef_reset">پاک کردن فیلترها</button>
+      </div>
+      <div id="expensesList"></div>
+    </div>
+  </section>
+  <section class="page" id="page-invoices"><div class="card"><p class="empty">بخش فاکتورها — مرحله بعد</p></div></section>
+  <!-- گزارش‌ها -->
+  <section class="page" id="page-reports">
+    <div class="card" style="padding:8px;">
+      <div class="report-subnav" id="reportSubnav">
+        <button data-tab="annual" class="active">سالانه</button>
+        <button data-tab="compare">مقایسه سال‌ها</button>
+        <button data-tab="customers">مشتریان</button>
+        <button data-tab="suppliers">تأمین‌کنندگان</button>
+        <button data-tab="products">کالاها</button>
+        <button data-tab="orders">سفارش‌ها</button>
+        <button data-tab="search">جست‌وجو</button>
+      </div>
+    </div>
+
+    <!-- گزارش سالانه -->
+    <div class="report-tab active" id="rep-annual">
+      <div class="card">
+        <div class="row-between">
+          <h2 style="margin:0;">گزارش سالانه</h2>
+          <select id="rep_annual_year"></select>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="report-table" id="annualReportTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- مقایسه سال‌ها -->
+    <div class="report-tab" id="rep-compare">
+      <div class="card">
+        <h2>مقایسه سال‌ها</h2>
+        <div style="overflow-x:auto;">
+          <table class="report-table" id="compareReportTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- مشتریان -->
+    <div class="report-tab" id="rep-customers">
+      <div class="card">
+        <div class="row-between"><h2 style="margin:0;">گزارش مشتریان</h2><button class="btn btn-sm btn-outline" id="customersCsvBtn">خروجی CSV</button></div>
+        <p class="empty" style="text-align:right;padding:0 0 10px;">
+          گروه‌بندی بر اساس امتیاز ساده (تعداد خرید + مجموع خرید + تازگی آخرین خرید)
+        </p>
+        <div class="filter-bar">
+          <select id="cr_loyaltyFilter">
+            <option value="">همه دسته‌ها</option>
+            <option value="مشتری ویژه">ویژه</option>
+            <option value="وفادار">وفادار</option>
+            <option value="فعال">فعال</option>
+            <option value="کم‌فعالیت">کم‌فعالیت</option>
+            <option value="غیرفعال">غیرفعال</option>
+          </select>
+          <button type="button" class="btn btn-sm btn-outline" id="cr_reset">پاک کردن فیلتر</button>
+        </div>
+        <div id="customerReportList"></div>
+      </div>
+    </div>
+
+    <!-- تأمین‌کنندگان -->
+    <div class="report-tab" id="rep-suppliers">
+      <div class="card">
+        <div class="row-between"><h2 style="margin:0;">گزارش تأمین‌کنندگان</h2><button class="btn btn-sm btn-outline" id="suppliersCsvBtn">خروجی CSV</button></div>
+        <div id="supplierReportList"></div>
+      </div>
+    </div>
+
+    <!-- کالاها -->
+    <div class="report-tab" id="rep-products">
+      <div class="card">
+        <div class="row-between">
+          <h2 style="margin:0;">گزارش کالاها</h2>
+          <select id="productReportSort">
+            <option value="sales">بیشترین فروش</option>
+            <option value="profit">بیشترین سود</option>
+            <option value="stockDesc">بیشترین موجودی</option>
+            <option value="stockAsc">کمترین موجودی</option>
+          </select>
+        </div>
+        <div class="filter-actions"><button type="button" class="btn btn-sm btn-outline" id="productReportCsvBtn">خروجی CSV</button></div>
+        <div id="productReportList"></div>
+      </div>
+    </div>
+
+    <!-- سفارش‌ها -->
+    <div class="report-tab" id="rep-orders">
+      <div class="card">
+        <div class="row-between">
+          <h2 style="margin:0;">گزارش سفارش‌ها</h2>
+          <select id="orderReportStatusFilter">
+            <option value="">همه وضعیت‌ها</option>
+            <option>جدید</option><option>تأیید شده</option><option>در حال آماده‌سازی</option>
+            <option>آماده تحویل</option><option>تحویل شده</option><option>لغو شده</option>
+          </select>
+        </div>
+        <div class="filter-actions"><button type="button" class="btn btn-sm btn-outline" id="orderReportCsvBtn">خروجی CSV</button></div>
+        <div id="orderReportList"></div>
+      </div>
+    </div>
+
+    <!-- جست‌وجوی سراسری -->
+    <div class="report-tab" id="rep-search">
+      <div class="card">
+        <h2>جست‌وجوی سراسری</h2>
+        <input type="text" class="search-box" id="globalSearchInput" placeholder="نام کالا، مشتری، تأمین‌کننده، شماره فاکتور/خرید/سفارش، توضیحات...">
+        <div id="globalSearchResults"></div>
+      </div>
+    </div>
+  </section>
+  <section class="page" id="page-backup">
+    <div class="backup-box">
+      <h2 style="margin:0 0 6px;">دریافت پشتیبان (Backup)</h2>
+      <p>یک فایل JSON شامل تمام اطلاعات فعلی برنامه (کالاها، مشتریان، تأمین‌کنندگان، خریدها، فروش‌ها، سفارش‌ها، هزینه‌ها و تنظیمات) دانلود می‌شود. این فایل را در جای امنی نگه دارید.</p>
+      <button class="btn" id="backupBtn">دانلود فایل پشتیبان</button>
+    </div>
+    <div class="backup-box">
+      <h2 style="margin:0 0 6px;">بازیابی از پشتیبان (Restore)</h2>
+      <p>با انتخاب یک فایل پشتیبان معتبر، اطلاعات فعلی برنامه با اطلاعات داخل فایل جایگزین می‌شود. قبل از این کار، یک نسخه پشتیبان اضطراری از اطلاعات فعلی هم به‌صورت خودکار دانلود می‌شود.</p>
+      <input type="file" id="restoreFileInput" accept="application/json,.json" style="margin-bottom:10px;width:100%;">
+      <button class="btn btn-outline" id="restoreBtn">بازیابی از فایل انتخاب‌شده</button>
+    </div>
+  </section>
+
+  <!-- تنظیمات -->
+  <section class="page" id="page-settings">
+    <div class="card">
+      <h2>تنظیمات کسب‌وکار</h2>
+      <form class="settings" id="settingsForm">
+        <label>نام کسب‌وکار</label>
+        <input type="text" id="set_bizName" placeholder="مثلاً فروشگاه ...">
+        <label>شماره تماس</label>
+        <input type="text" id="set_phone" placeholder="۰۹۱۲...">
+        <label>آدرس</label>
+        <input type="text" id="set_address" placeholder="آدرس فروشگاه">
+        <label>واحد پول</label>
+        <input type="text" id="set_currency" value="تومان">
+        <button type="submit" class="btn">ذخیره تنظیمات</button>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<nav class="bottom" id="bottomNav">
+  <button data-page="dashboard" class="active">داشبورد</button>
+  <button data-page="purchases">خریدها</button>
+  <button data-page="sales">فروش‌ها</button>
+  <button data-page="orders">سفارش‌ها</button>
+  <button data-page="products">کالاها</button>
+  <button data-page="customers">مشتریان</button>
+  <button data-page="suppliers">تأمین‌کنندگان</button>
+  <button data-page="expenses">هزینه‌ها</button>
+  <button data-page="invoices">فاکتورها</button>
+  <button data-page="reports">گزارش‌ها</button>
+  <button data-page="backup">پشتیبان‌گیری</button>
+  <button data-page="settings">تنظیمات</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+<div id="invoicePrintArea"></div>
+
+<script>
+/* =========================================================
+   ۱) لایه ذخیره‌سازی (localStorage)
+   ========================================================= */
+const STORAGE_KEY = 'retailAppData_v1';
+
+/* لوگوی برند «شهد شیرین» — برای درج در پایین فاکتور چاپی (مرحله ۷) */
+const BRAND_LOGO_DATA_URI = 'data:image/jpeg;base64,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';
+
+const DEFAULT_DATA = {
+  settings: { bizName: '', phone: '', address: '', currency: 'تومان' },
+  products: [],
+  suppliers: [],
+  customers: [],
+  purchases: [],
+  directCosts: [],
+  sales: [],
+  orders: [],
+  expenses: []
+};
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return structuredClone(DEFAULT_DATA);
+    const parsed = JSON.parse(raw);
+    // اطمینان از وجود همه کلیدها (برای سازگاری با نسخه‌های بعدی)
+    return Object.assign(structuredClone(DEFAULT_DATA), parsed);
+  }catch(e){
+    console.error('خطا در خواندن اطلاعات ذخیره‌شده', e);
+    return structuredClone(DEFAULT_DATA);
+  }
+}
+
+function saveData(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+}
+
+let appData = loadData();
+
+/* =========================================================
+   ۲) تبدیل تاریخ میلادی <-> شمسی (بدون کتابخانه خارجی)
+   ========================================================= */
+function toJalali(gy, gm, gd){
+  const g_d_m = [0,31,59,90,120,151,181,212,243,273,304,334];
+  let jy;
+  gy = gm > 2 ? gy + 1 : gy;
+  let days = 355666 + (365 * gy) + Math.floor((gy + 8) / 4) - Math.floor((gy + 99) / 100)
+      + Math.floor((gy + 399) / 400) + gd + g_d_m[gm - 1];
+  jy = -1595 + (33 * Math.floor(days / 12053));
+  days %= 12053;
+  jy += 4 * Math.floor(days / 1461);
+  days %= 1461;
+  if (days > 365) {
+    jy += Math.floor((days - 1) / 365);
+    days = (days - 1) % 365;
+  }
+  let jm, jd;
+  if (days < 186) {
+    jm = 1 + Math.floor(days / 31);
+    jd = 1 + (days % 31);
+  } else {
+    jm = 7 + Math.floor((days - 186) / 30);
+    jd = 1 + ((days - 186) % 30);
+  }
+  return { jy, jm, jd };
+}
+
+function todayJalali(){
+  const now = new Date();
+  return toJalali(now.getFullYear(), now.getMonth()+1, now.getDate());
+}
+
+function toPersianDigits(str){
+  const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  return String(str).replace(/[0-9]/g, d => fa[d]);
+}
+
+function formatNumber(n){
+  n = Number(n) || 0;
+  return toPersianDigits(n.toLocaleString('en-US'));
+}
+
+/* =========================================================
+   ۳) مدیریت سال‌ها (استخراج خودکار از داده‌ها)
+   ========================================================= */
+// هر رکورد آینده باید فیلد تاریخ شمسی به شکل {jy, jm, jd} یا رشته "jy/jm/jd" داشته باشد.
+function getAllRecordYears(){
+  const years = new Set();
+  const collections = ['purchases','sales','orders','expenses','directCosts'];
+  collections.forEach(key => {
+    (appData[key] || []).forEach(rec => {
+      if(rec && rec.date && rec.date.jy){
+        years.add(rec.date.jy);
+      }
+    });
+  });
+  return Array.from(years).sort((a,b)=>b-a);
+}
+
+/* هستهٔ محاسبات مالی: با گرفتن یک تابع فیلتر روی تاریخ، مجموع فروش/خرید/هزینه/سود را برمی‌گرداند.
+   همین تابع هم برای داشبورد، هم گزارش ماهانه/سالانه و هم مقایسه سال‌ها استفاده می‌شود
+   تا محاسبات همیشه با هم سازگار (Consistent) بمانند. */
+function computeAggregates(pred){
+  let sales = 0, cogs = 0, grossProfit = 0, invoiceCount = 0;
+  (appData.sales||[]).forEach(s=>{
+    if(s.date && pred(s.date)){
+      sales += Number(s.netSales)||0;
+      cogs += Number(s.cogs)||0;
+      grossProfit += Number(s.grossProfit)||0;
+      invoiceCount++;
+    }
+  });
+  let purchases = 0, directCost = 0;
+  (appData.purchases||[]).forEach(p=>{
+    if(p.date && pred(p.date)){
+      purchases += Number(p.itemsTotal)||0;
+      directCost += Number(p.directCostTotal)||0;
+    }
+  });
+  let generalExpense = 0;
+  (appData.expenses||[]).forEach(ex=>{
+    if(ex.date && pred(ex.date)){
+      generalExpense += Number(ex.amount)||0;
+    }
+  });
+  const netProfit = grossProfit - generalExpense;
+  const margin = sales > 0 ? (netProfit/sales*100) : 0;
+  return { sales, purchases, directCost, generalExpense, cogs, grossProfit, netProfit, margin, invoiceCount };
+}
+
+function populateMonthSelect(){
+  const sel = document.getElementById('monthSelect');
+  sel.innerHTML = '<option value="all">همه ماه‌ها</option>' +
+    PERSIAN_MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+}
+
+function getSelectedFilter(){
+  const y = getSelectedYearValue();
+  const mv = document.getElementById('monthSelect').value;
+  const m = (y === null || mv === 'all') ? null : Number(mv);
+  return { year: y, month: m };
+}
+
+function matchesFilter(dateObj, filter){
+  if(!dateObj) return false;
+  if(filter.year !== null && dateObj.jy !== filter.year) return false;
+  if(filter.month !== null && dateObj.jm !== filter.month) return false;
+  return true;
+}
+
+function populateYearSelect(){
+  const sel = document.getElementById('yearSelect');
+  const years = getAllRecordYears();
+  const cur = todayJalali().jy;
+  if(!years.includes(cur)) years.unshift(cur); // سال جاری همیشه در دسترس باشد
+  years.sort((a,b)=>b-a);
+
+  sel.innerHTML = '';
+  const allOpt = document.createElement('option');
+  allOpt.value = 'all';
+  allOpt.textContent = 'همه سال‌ها';
+  sel.appendChild(allOpt);
+
+  years.forEach(y=>{
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = toPersianDigits(y);
+    sel.appendChild(opt);
+  });
+
+  const saved = localStorage.getItem('selectedYear') || 'all';
+  sel.value = years.includes(Number(saved)) || saved === 'all' ? saved : 'all';
+}
+
+document.getElementById('yearSelect').addEventListener('change', (e)=>{
+  localStorage.setItem('selectedYear', e.target.value);
+  renderDashboard();
+  if(typeof renderAnnualReport === 'function') renderAnnualReport();
+});
+
+document.getElementById('monthSelect').addEventListener('change', ()=>{
+  renderDashboard();
+});
+
+/* =========================================================
+   ۴) ناوبری بین صفحات
+   ========================================================= */
+function switchPage(name){
+  document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('active', b.dataset.page===name));
+  document.querySelectorAll('main .page').forEach(p=>p.classList.toggle('active', p.id==='page-'+name));
+  if(name === 'dashboard' && typeof renderDashboard === 'function') renderDashboard();
+  if(name === 'reports' && typeof refreshAllReports === 'function') refreshAllReports();
+  if(name === 'purchases' && typeof renderPurchases === 'function') renderPurchases();
+  if(name === 'sales' && typeof renderSales === 'function') renderSales();
+  if(name === 'orders' && typeof renderOrders === 'function') renderOrders();
+  if(name === 'products' && typeof renderProducts === 'function') renderProducts(document.getElementById('productSearch').value);
+  if(name === 'customers' && typeof renderCustomers === 'function') renderCustomers(document.getElementById('customerSearch').value);
+  if(name === 'suppliers' && typeof renderSuppliers === 'function') renderSuppliers(document.getElementById('supplierSearch').value);
+  if(name === 'expenses' && typeof renderExpenses === 'function') renderExpenses();
+}
+
+document.getElementById('bottomNav').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-page]');
+  if(!btn) return;
+  switchPage(btn.dataset.page);
+});
+
+/* =========================================================
+   ۵) تنظیمات
+   ========================================================= */
+function loadSettingsForm(){
+  const s = appData.settings;
+  document.getElementById('set_bizName').value = s.bizName || '';
+  document.getElementById('set_phone').value = s.phone || '';
+  document.getElementById('set_address').value = s.address || '';
+  document.getElementById('set_currency').value = s.currency || 'تومان';
+  document.getElementById('bizNameTitle').textContent = s.bizName || 'مدیریت کسب‌وکار';
+}
+
+document.getElementById('settingsForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  appData.settings.bizName = document.getElementById('set_bizName').value.trim();
+  appData.settings.phone = document.getElementById('set_phone').value.trim();
+  appData.settings.address = document.getElementById('set_address').value.trim();
+  appData.settings.currency = document.getElementById('set_currency').value.trim() || 'تومان';
+  saveData();
+  document.getElementById('bizNameTitle').textContent = appData.settings.bizName || 'مدیریت کسب‌وکار';
+  showToast('تنظیمات ذخیره شد');
+});
+
+/* =========================================================
+   ۶) داشبورد کامل (مرحله ۵)
+   ========================================================= */
+function getSelectedYearValue(){
+  const v = document.getElementById('yearSelect').value;
+  return v === 'all' ? null : Number(v);
+}
+
+function renderDashboard(){
+  const filter = getSelectedFilter();
+  const agg = computeAggregates(d => matchesFilter(d, filter));
+
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+
+  set('dashSalesTotal', formatNumber(agg.sales) + ' تومان');
+  set('dashPurchaseTotal', formatNumber(agg.purchases) + ' تومان');
+  set('dashDirectCost', formatNumber(agg.directCost) + ' تومان');
+  set('dashGeneralExpense', formatNumber(agg.generalExpense) + ' تومان');
+  set('dashCogs', formatNumber(agg.cogs) + ' تومان');
+  set('dashGrossProfit', formatNumber(agg.grossProfit) + ' تومان');
+  set('dashNetProfit', formatNumber(agg.netProfit) + ' تومان');
+  set('dashMargin', toPersianDigits(agg.margin.toFixed(1)) + '٪');
+  set('dashInvoiceCount', formatNumber(agg.invoiceCount));
+
+  set('dashCustomerCount', formatNumber(appData.customers.length));
+  set('dashSupplierCount', formatNumber(appData.suppliers.length));
+  set('dashProductCount', formatNumber(appData.products.length));
+  const stockTotal = appData.products.reduce((a,p)=>a + (Number(p.stock)||0), 0);
+  set('dashStockTotal', formatNumber(stockTotal));
+
+  renderDashCharts(filter);
+}
+
+/* نمودارهای ساده ستونی (بدون کتابخانه) بر اساس سال انتخاب‌شده در فیلتر بالا؛
+   اگر «همه سال‌ها» انتخاب شده باشد، از سال جاری استفاده می‌شود. */
+function renderDashCharts(filter){
+  const wrap = document.getElementById('dashCharts');
+  if(!wrap) return;
+  const year = filter.year !== null ? filter.year : todayJalali().jy;
+
+  const monthly = PERSIAN_MONTHS.map((_,i)=>{
+    const m = i+1;
+    return computeAggregates(d => d.jy === year && d.jm === m);
+  });
+
+  function buildBarChart(title, values, colorVar){
+    const max = Math.max(1, ...values.map(v=>Math.abs(v)));
+    const bars = values.map((v,i)=>{
+      const h = Math.round((Math.abs(v)/max) * 100);
+      return `<div class="bar-col">
+        <div class="bar" style="height:${h}%;${colorVar ? 'background:'+colorVar+';' : ''}"></div>
+        <div class="bar-label">${PERSIAN_MONTHS[i].slice(0,3)}</div>
+      </div>`;
+    }).join('');
+    return `<div class="chart-title">${title} (${toPersianDigits(year)})</div><div class="bar-chart">${bars}</div>`;
+  }
+
+  wrap.innerHTML =
+    buildBarChart('فروش ماهانه', monthly.map(m=>m.sales), '#2563eb') +
+    buildBarChart('خرید ماهانه', monthly.map(m=>m.purchases), '#0369a1') +
+    buildBarChart('هزینه ماهانه (عمومی)', monthly.map(m=>m.generalExpense), '#dc2626') +
+    buildBarChart('سود خالص ماهانه', monthly.map(m=>m.netProfit), '#16a34a');
+}
+
+/* ---- Drill-down روی کارت‌های اصلی داشبورد ---- */
+function drillDown(kind){
+  const filter = getSelectedFilter();
+  let title = '', rowsHtml = '';
+
+  if(kind === 'sales' || kind === 'grossProfit' || kind === 'netProfit'){
+    const list = appData.sales.filter(s => matchesFilter(s.date, filter))
+      .sort((a,b)=> jalaliKey(b.date) - jalaliKey(a.date));
+    title = kind === 'sales' ? 'فروش‌های این دوره' : (kind === 'grossProfit' ? 'سود ناخالص هر فاکتور' : 'سود خالص (بر اساس فاکتور فروش)');
+    rowsHtml = list.length === 0 ? '<p class="empty">موردی یافت نشد.</p>' : list.map(s=>`
+      <div class="hist-item">
+        <div class="row-between"><b>فاکتور ${escapeHtml(s.number)}</b><span>${jalaliStr(s.date)}</span></div>
+        <div>مشتری: ${escapeHtml(s.customer||'—')} — مبلغ: ${formatNumber(s.netSales)} تومان — سود ناخالص: ${formatNumber(s.grossProfit)} تومان</div>
+        <div style="margin-top:6px;"><button class="btn btn-sm btn-outline" onclick="viewInvoiceFromCustomer('${s.id}')">مشاهده فاکتور</button></div>
+      </div>`).join('');
+  } else if(kind === 'purchases' || kind === 'directCost'){
+    const list = appData.purchases.filter(p => matchesFilter(p.date, filter))
+      .sort((a,b)=> jalaliKey(b.date) - jalaliKey(a.date));
+    title = kind === 'purchases' ? 'خریدهای این دوره' : 'هزینه‌های مستقیم خرید این دوره';
+    rowsHtml = list.length === 0 ? '<p class="empty">موردی یافت نشد.</p>' : list.map(p=>{
+      const sup = appData.suppliers.find(x=>x.id===p.supplierId);
+      return `
+      <div class="hist-item">
+        <div class="row-between"><b>خرید ${escapeHtml(p.number)}</b><span>${jalaliStr(p.date)}</span></div>
+        <div>تأمین‌کننده: ${escapeHtml(sup?sup.name:'—')} — مبلغ کالا: ${formatNumber(p.itemsTotal)} تومان — هزینه مستقیم: ${formatNumber(p.directCostTotal)} تومان</div>
+      </div>`;
+    }).join('');
+  } else if(kind === 'expenses'){
+    const list = appData.expenses.filter(ex => matchesFilter(ex.date, filter))
+      .sort((a,b)=> jalaliKey(b.date) - jalaliKey(a.date));
+    title = 'هزینه‌های عمومی این دوره';
+    rowsHtml = list.length === 0 ? '<p class="empty">موردی یافت نشد.</p>' : list.map(ex=>`
+      <div class="hist-item">
+        <div class="row-between"><b>${escapeHtml(ex.category)}</b><span>${jalaliStr(ex.date)}</span></div>
+        <div>مبلغ: ${formatNumber(ex.amount)} تومان ${ex.description ? '— '+escapeHtml(ex.description) : ''}</div>
+      </div>`).join('');
+  }
+
+  document.getElementById('dashDrilldownTitle').textContent = title;
+  document.getElementById('dashDrilldownContent').innerHTML = rowsHtml;
+  const card = document.getElementById('dashDrilldownCard');
+  card.classList.remove('hidden');
+  card.scrollIntoView({behavior:'smooth'});
+}
+
+document.getElementById('closeDrilldownBtn').addEventListener('click', ()=>{
+  document.getElementById('dashDrilldownCard').classList.add('hidden');
+});
+
+/* =========================================================
+   ۷) toast ساده
+   ========================================================= */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* =========================================================
+   ۸) ابزار کمکی مشترک
+   ========================================================= */
+function genId(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+/* =========================================================
+   ۹) مدیریت کالاها
+   ========================================================= */
+let editingProductId = null;
+
+function renderProducts(filter){
+  const wrap = document.getElementById('productsList');
+  filter = (filter || '').trim().toLowerCase();
+  let list = appData.products;
+  if(filter){
+    list = list.filter(p =>
+      (p.name||'').toLowerCase().includes(filter) ||
+      (p.code||'').toLowerCase().includes(filter)
+    );
+  }
+  const stockMode = document.getElementById('pr_stockFilter').value;
+  if(stockMode === 'out') list = list.filter(p=>Number(p.stock)<=0);
+  else if(stockMode === 'low') list = list.filter(p=>Number(p.stock)>0 && Number(p.stock)<=Number(p.minStock));
+  else if(stockMode === 'in') list = list.filter(p=>Number(p.stock)>Number(p.minStock));
+  const priceMin = Number(document.getElementById('pr_priceMin').value) || 0;
+  const priceMax = Number(document.getElementById('pr_priceMax').value) || 0;
+  if(priceMin) list = list.filter(p=>Number(p.salePrice)>=priceMin);
+  if(priceMax) list = list.filter(p=>Number(p.salePrice)<=priceMax);
+  window.__lastProductsList = list;
+  if(list.length === 0){
+    wrap.innerHTML = '<p class="empty">کالایی یافت نشد.</p>';
+    return;
+  }
+  wrap.innerHTML = list.map(p=>{
+    const low = Number(p.stock) <= Number(p.minStock);
+    return `
+    <div class="list-item">
+      <div class="li-title">${escapeHtml(p.name)} ${p.code ? '<span class="li-sub">('+escapeHtml(p.code)+')</span>' : ''}</div>
+      <div class="li-sub">
+        موجودی: ${formatNumber(p.stock)} ${escapeHtml(p.unit||'')} &nbsp;|&nbsp;
+        قیمت خرید: ${formatNumber(p.purchasePrice)} &nbsp;|&nbsp;
+        قیمت فروش: ${formatNumber(p.salePrice)}
+      </div>
+      <div style="margin-top:6px;">
+        <span class="badge ${low?'badge-low':'badge-ok'}">${low?'کمبود موجودی':'موجودی عادی'}</span>
+      </div>
+      <div class="li-actions">
+        <button class="btn btn-sm btn-outline" onclick="editProduct('${p.id}')">ویرایش</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.id}')">حذف</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showProductForm(){
+  document.getElementById('productFormCard').classList.remove('hidden');
+}
+function hideProductForm(){
+  document.getElementById('productFormCard').classList.add('hidden');
+  document.getElementById('productForm').reset();
+  editingProductId = null;
+  document.getElementById('productFormTitle').textContent = 'کالای جدید';
+}
+
+document.getElementById('showProductFormBtn').addEventListener('click', ()=>{
+  editingProductId = null;
+  document.getElementById('productForm').reset();
+  document.getElementById('productFormTitle').textContent = 'کالای جدید';
+  showProductForm();
+});
+document.getElementById('cancelProductForm').addEventListener('click', hideProductForm);
+
+document.getElementById('productSearch').addEventListener('input', (e)=>{
+  renderProducts(e.target.value);
+});
+
+document.getElementById('productForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const data = {
+    name: document.getElementById('pr_name').value.trim(),
+    code: document.getElementById('pr_code').value.trim(),
+    category: document.getElementById('pr_category').value.trim(),
+    unit: document.getElementById('pr_unit').value.trim(),
+    minStock: Number(document.getElementById('pr_minStock').value) || 0,
+    purchasePrice: Number(document.getElementById('pr_purchasePrice').value) || 0,
+    salePrice: Number(document.getElementById('pr_salePrice').value) || 0,
+    description: document.getElementById('pr_description').value.trim()
+  };
+  if(!data.name){ showToast('نام کالا الزامی است'); return; }
+
+  if(editingProductId){
+    const p = appData.products.find(x=>x.id===editingProductId);
+    Object.assign(p, data);
+  } else {
+    const initialStock = Number(document.getElementById('pr_initialStock').value) || 0;
+    appData.products.push({
+      id: genId(),
+      ...data,
+      initialStock,
+      stock: initialStock,
+      lastPurchasePrice: data.purchasePrice,
+      avgPurchasePrice: data.purchasePrice
+    });
+  }
+  saveData();
+  hideProductForm();
+  renderProducts();
+  refreshAllProductSelects();
+  showToast('کالا ذخیره شد');
+});
+
+function editProduct(id){
+  const p = appData.products.find(x=>x.id===id);
+  if(!p) return;
+  editingProductId = id;
+  document.getElementById('productFormTitle').textContent = 'ویرایش کالا';
+  document.getElementById('pr_id').value = p.id;
+  document.getElementById('pr_name').value = p.name || '';
+  document.getElementById('pr_code').value = p.code || '';
+  document.getElementById('pr_category').value = p.category || '';
+  document.getElementById('pr_unit').value = p.unit || '';
+  document.getElementById('pr_initialStock').value = p.initialStock || 0;
+  document.getElementById('pr_minStock').value = p.minStock || 0;
+  document.getElementById('pr_purchasePrice').value = p.purchasePrice || 0;
+  document.getElementById('pr_salePrice').value = p.salePrice || 0;
+  document.getElementById('pr_description').value = p.description || '';
+  showProductForm();
+}
+
+function deleteProduct(id){
+  const p = appData.products.find(x=>x.id===id);
+  if(!p) return;
+  const used = appData.purchases.some(pu=>pu.items.some(it=>it.productId===id)) ||
+               appData.sales.some(s=>s.items.some(it=>it.productId===id)) ||
+               appData.orders.some(o=>o.items.some(it=>it.productId===id));
+  if(used){ showToast('این کالا در خرید/فروش/سفارش قبلی استفاده شده و برای حفظ تاریخچه مالی قابل حذف نیست'); return; }
+  if(!confirm('کالای «'+p.name+'» حذف شود؟')) return;
+  appData.products = appData.products.filter(x=>x.id!==id);
+  saveData();
+  renderProducts();
+  refreshAllProductSelects();
+  showToast('کالا حذف شد');
+}
+
+/* =========================================================
+   ۱۰) مدیریت تأمین‌کنندگان
+   ========================================================= */
+let editingSupplierId = null;
+
+function renderSuppliers(filter){
+  const wrap = document.getElementById('suppliersList');
+  filter = (filter || '').trim().toLowerCase();
+  let list = appData.suppliers;
+  if(filter){
+    list = list.filter(s =>
+      (s.name||'').toLowerCase().includes(filter) ||
+      (s.phone||'').toLowerCase().includes(filter)
+    );
+  }
+  if(list.length === 0){
+    wrap.innerHTML = '<p class="empty">تأمین‌کننده‌ای ثبت نشده است.</p>';
+    return;
+  }
+  wrap.innerHTML = list.map(s=>`
+    <div class="list-item">
+      <div class="li-title">${escapeHtml(s.name)}</div>
+      <div class="li-sub">${escapeHtml(s.phone||'')} ${s.address ? '— '+escapeHtml(s.address) : ''}</div>
+      <div class="li-actions">
+        <button class="btn btn-sm btn-outline" onclick="editSupplier('${s.id}')">ویرایش</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSupplier('${s.id}')">حذف</button>
+      </div>
+    </div>`).join('');
+}
+
+function showSupplierForm(){ document.getElementById('supplierFormCard').classList.remove('hidden'); }
+function hideSupplierForm(){
+  document.getElementById('supplierFormCard').classList.add('hidden');
+  document.getElementById('supplierForm').reset();
+  editingSupplierId = null;
+  document.getElementById('supplierFormTitle').textContent = 'تأمین‌کننده جدید';
+}
+
+document.getElementById('showSupplierFormBtn').addEventListener('click', ()=>{
+  editingSupplierId = null;
+  document.getElementById('supplierForm').reset();
+  document.getElementById('supplierFormTitle').textContent = 'تأمین‌کننده جدید';
+  showSupplierForm();
+});
+document.getElementById('cancelSupplierForm').addEventListener('click', hideSupplierForm);
+
+document.getElementById('supplierSearch').addEventListener('input', (e)=>{
+  renderSuppliers(e.target.value);
+});
+
+document.getElementById('supplierForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const data = {
+    name: document.getElementById('sp_name').value.trim(),
+    phone: document.getElementById('sp_phone').value.trim(),
+    address: document.getElementById('sp_address').value.trim(),
+    description: document.getElementById('sp_description').value.trim()
+  };
+  if(!data.name){ showToast('نام تأمین‌کننده الزامی است'); return; }
+
+  if(editingSupplierId){
+    const s = appData.suppliers.find(x=>x.id===editingSupplierId);
+    Object.assign(s, data);
+  } else {
+    appData.suppliers.push({ id: genId(), ...data });
+  }
+  saveData();
+  hideSupplierForm();
+  renderSuppliers();
+  refreshSupplierSelect();
+  showToast('تأمین‌کننده ذخیره شد');
+});
+
+function editSupplier(id){
+  const s = appData.suppliers.find(x=>x.id===id);
+  if(!s) return;
+  editingSupplierId = id;
+  document.getElementById('supplierFormTitle').textContent = 'ویرایش تأمین‌کننده';
+  document.getElementById('sp_id').value = s.id;
+  document.getElementById('sp_name').value = s.name || '';
+  document.getElementById('sp_phone').value = s.phone || '';
+  document.getElementById('sp_address').value = s.address || '';
+  document.getElementById('sp_description').value = s.description || '';
+  showSupplierForm();
+}
+
+function deleteSupplier(id){
+  const s = appData.suppliers.find(x=>x.id===id);
+  if(!s) return;
+  const used = appData.purchases.some(p=>p.supplierId===id);
+  if(used){ showToast('این تأمین‌کننده دارای سابقه خرید است و برای حفظ تاریخچه مالی قابل حذف نیست'); return; }
+  if(!confirm('تأمین‌کننده «'+s.name+'» حذف شود؟')) return;
+  appData.suppliers = appData.suppliers.filter(x=>x.id!==id);
+  saveData();
+  renderSuppliers();
+  refreshSupplierSelect();
+  showToast('تأمین‌کننده حذف شد');
+}
+
+/* =========================================================
+   ۱۱) ثبت خرید
+   ========================================================= */
+const PERSIAN_MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+
+function refreshSupplierSelect(){
+  const sel = document.getElementById('p_supplier');
+  const cur = sel.value;
+  sel.innerHTML = appData.suppliers.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  if(appData.suppliers.some(s=>s.id===cur)) sel.value = cur;
+
+  const pf = document.getElementById('pf_supplier');
+  if(pf){
+    const pfCur = pf.value;
+    pf.innerHTML = '<option value="">همه تأمین‌کنندگان</option>' +
+      appData.suppliers.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+    if(appData.suppliers.some(s=>s.id===pfCur)) pf.value = pfCur;
+  }
+}
+
+function refreshAllProductSelects(){
+  document.querySelectorAll('.li-product-select').forEach(sel=>{
+    const cur = sel.value;
+    sel.innerHTML = appData.products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    if(appData.products.some(p=>p.id===cur)) sel.value = cur;
+  });
+  document.querySelectorAll('.si-product-select').forEach(sel=>{
+    const cur = sel.value;
+    sel.innerHTML = appData.products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} (موجودی: ${formatNumber(p.stock)})</option>`).join('');
+    if(appData.products.some(p=>p.id===cur)) sel.value = cur;
+  });
+  document.querySelectorAll('.oi-product-select').forEach(sel=>{
+    const cur = sel.value;
+    sel.innerHTML = appData.products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    if(appData.products.some(p=>p.id===cur)) sel.value = cur;
+  });
+  if(typeof calcSaleSummary === 'function') calcSaleSummary();
+  if(typeof calcOrderSummary === 'function') calcOrderSummary();
+}
+
+/* =========================================================
+   ۱۳) مدیریت مشتریان
+   ========================================================= */
+let editingCustomerId = null;
+
+function getCustomerStats(customerId){
+  const sales = appData.sales.filter(s => s.customerId === customerId);
+  if(sales.length === 0){
+    return { count:0, total:0, avg:0, first:null, last:null, sales:[] };
+  }
+  const sorted = [...sales].sort((a,b)=> jalaliKey(a.date) - jalaliKey(b.date));
+  const total = sales.reduce((a,s)=>a + (Number(s.netSales)||0), 0);
+  return {
+    count: sales.length,
+    total,
+    avg: total / sales.length,
+    first: sorted[0].date,
+    last: sorted[sorted.length-1].date,
+    sales: sorted
+  };
+}
+
+function jalaliKey(d){
+  return (d.jy*10000) + (d.jm*100) + d.jd;
+}
+function jalaliStr(d){
+  if(!d) return '—';
+  return `${toPersianDigits(d.jy)}/${toPersianDigits(d.jm)}/${toPersianDigits(d.jd)}`;
+}
+
+function renderCustomers(filter){
+  const wrap = document.getElementById('customersList');
+  filter = (filter || '').trim().toLowerCase();
+  let list = appData.customers;
+  if(filter){
+    list = list.filter(c =>
+      (c.name||'').toLowerCase().includes(filter) ||
+      (c.phone||'').toLowerCase().includes(filter)
+    );
+  }
+  if(list.length === 0){
+    wrap.innerHTML = '<p class="empty">مشتری‌ای ثبت نشده است.</p>';
+    return;
+  }
+  wrap.innerHTML = list.map(c=>{
+    const stats = getCustomerStats(c.id);
+    return `
+    <div class="list-item">
+      <div class="li-title">${escapeHtml(c.name)}</div>
+      <div class="li-sub">${escapeHtml(c.phone||'—')}</div>
+      <div class="li-sub">
+        تعداد خرید: ${stats.count ? formatNumber(stats.count) : 'بدون خرید'} &nbsp;|&nbsp;
+        مجموع خرید: ${formatNumber(stats.total)} تومان &nbsp;|&nbsp;
+        آخرین خرید: ${stats.last ? jalaliStr(stats.last) : '—'}
+      </div>
+      <div class="li-actions">
+        <button class="btn btn-sm" onclick="viewCustomerDetail('${c.id}')">مشاهده</button>
+        <button class="btn btn-sm btn-outline" onclick="editCustomer('${c.id}')">ویرایش</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteCustomer('${c.id}')">حذف</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showCustomerForm(){ document.getElementById('customerFormCard').classList.remove('hidden'); }
+function hideCustomerForm(){
+  document.getElementById('customerFormCard').classList.add('hidden');
+  document.getElementById('customerForm').reset();
+  editingCustomerId = null;
+  document.getElementById('customerFormTitle').textContent = 'مشتری جدید';
+}
+
+document.getElementById('showCustomerFormBtn').addEventListener('click', ()=>{
+  editingCustomerId = null;
+  document.getElementById('customerForm').reset();
+  document.getElementById('customerFormTitle').textContent = 'مشتری جدید';
+  showCustomerForm();
+});
+document.getElementById('cancelCustomerForm').addEventListener('click', hideCustomerForm);
+document.getElementById('customerSearch').addEventListener('input', (e)=>{
+  renderCustomers(e.target.value);
+});
+
+document.getElementById('customerForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const data = {
+    name: document.getElementById('cu_name').value.trim(),
+    phone: document.getElementById('cu_phone').value.trim(),
+    address: document.getElementById('cu_address').value.trim(),
+    description: document.getElementById('cu_description').value.trim()
+  };
+  if(!data.name){ showToast('نام مشتری الزامی است'); return; }
+
+  if(editingCustomerId){
+    const c = appData.customers.find(x=>x.id===editingCustomerId);
+    Object.assign(c, data);
+  } else {
+    appData.customers.push({ id: genId(), ...data });
+  }
+  saveData();
+  hideCustomerForm();
+  renderCustomers();
+  refreshCustomerSelects();
+  showToast('مشتری ذخیره شد');
+});
+
+function editCustomer(id){
+  const c = appData.customers.find(x=>x.id===id);
+  if(!c) return;
+  editingCustomerId = id;
+  document.getElementById('customerFormTitle').textContent = 'ویرایش مشتری';
+  document.getElementById('cu_id').value = c.id;
+  document.getElementById('cu_name').value = c.name || '';
+  document.getElementById('cu_phone').value = c.phone || '';
+  document.getElementById('cu_address').value = c.address || '';
+  document.getElementById('cu_description').value = c.description || '';
+  showCustomerForm();
+}
+
+function deleteCustomer(id){
+  const c = appData.customers.find(x=>x.id===id);
+  if(!c) return;
+  const stats = getCustomerStats(id);
+  const msg = stats.count > 0
+    ? `مشتری «${c.name}» حذف شود؟ (${stats.count} فروش ثبت‌شده برای او باقی می‌ماند اما بدون اتصال به مشتری خواهد بود)`
+    : `مشتری «${c.name}» حذف شود؟`;
+  if(!confirm(msg)) return;
+  appData.customers = appData.customers.filter(x=>x.id!==id);
+  saveData();
+  renderCustomers();
+  refreshCustomerSelects();
+  showToast('مشتری حذف شد');
+}
+
+function viewCustomerDetail(id){
+  const c = appData.customers.find(x=>x.id===id);
+  if(!c) return;
+  const stats = getCustomerStats(id);
+
+  const historyHtml = stats.sales.length === 0
+    ? '<p class="empty">تاکنون خریدی ثبت نشده است.</p>'
+    : [...stats.sales].reverse().map(s=>{
+        const itemsLine = s.items.map(it=>{
+          const p = appData.products.find(x=>x.id===it.productId);
+          return `${escapeHtml(p?p.name:'—')} ×${formatNumber(it.qty)}`;
+        }).join('، ');
+        return `
+        <div class="hist-item">
+          <div class="row-between">
+            <b>فاکتور ${escapeHtml(s.number)}</b>
+            <span>${jalaliStr(s.date)}</span>
+          </div>
+          <div>مبلغ: ${formatNumber(s.netSales)} تومان &nbsp;|&nbsp; سود ناخالص: ${formatNumber(s.grossProfit)} تومان</div>
+          <div class="items-line">اقلام: ${itemsLine || '—'}</div>
+          <div style="margin-top:6px;">
+            <button class="btn btn-sm btn-outline" onclick="viewInvoiceFromCustomer('${s.id}')">مشاهده فاکتور</button>
+          </div>
+        </div>`;
+      }).join('');
+
+  document.getElementById('customerDetailContent').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-stat"><div class="v">${formatNumber(stats.count)}</div><div class="l">تعداد خرید</div></div>
+      <div class="detail-stat"><div class="v">${formatNumber(stats.total)}</div><div class="l">مجموع خرید (تومان)</div></div>
+      <div class="detail-stat"><div class="v">${formatNumber(Math.round(stats.avg))}</div><div class="l">میانگین خرید (تومان)</div></div>
+      <div class="detail-stat"><div class="v">${stats.first ? jalaliStr(stats.first) : '—'}</div><div class="l">اولین خرید</div></div>
+    </div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:6px;">
+      تلفن: ${escapeHtml(c.phone||'—')} ${c.address ? '— '+escapeHtml(c.address) : ''}
+    </div>
+    <h2 style="margin:14px 0 8px;">تاریخچه خرید</h2>
+    ${historyHtml}
+  `;
+  const card = document.getElementById('customerDetailCard');
+  card.classList.remove('hidden');
+  card.scrollIntoView({behavior:'smooth'});
+}
+
+document.getElementById('closeCustomerDetailBtn').addEventListener('click', ()=>{
+  document.getElementById('customerDetailCard').classList.add('hidden');
+});
+
+function viewInvoiceFromCustomer(saleId){
+  switchPage('sales');
+  viewInvoice(saleId);
+}
+
+/* ---- انتخاب مشتری + ثبت سریع (مشترک بین فرم فروش و سفارش) ---- */
+function buildCustomerOptionsHtml(selectedId){
+  let html = '<option value="">— بدون مشتری —</option>';
+  appData.customers.forEach(c=>{
+    const sel = c.id === selectedId ? 'selected' : '';
+    html += `<option value="${c.id}" ${sel}>${escapeHtml(c.name)}${c.phone ? ' - '+escapeHtml(c.phone) : ''}</option>`;
+  });
+  html += '<option value="__new__">+ مشتری جدید...</option>';
+  return html;
+}
+
+function refreshCustomerSelects(){
+  ['s_customer','o_customer'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = buildCustomerOptionsHtml(null);
+    if([...sel.options].some(o=>o.value===cur)) sel.value = cur;
+  });
+  ['sf_customer','of_customer'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">همه مشتریان</option>' +
+      appData.customers.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    if(appData.customers.some(c=>c.id===cur)) sel.value = cur;
+  });
+}
+
+function setupCustomerQuickAdd(selectId, wrapId, nameId, phoneId, btnId){
+  const sel = document.getElementById(selectId);
+  const wrap = document.getElementById(wrapId);
+  sel.addEventListener('change', ()=>{
+    if(sel.value === '__new__'){
+      wrap.classList.remove('hidden');
+    } else {
+      wrap.classList.add('hidden');
+    }
+  });
+  document.getElementById(btnId).addEventListener('click', ()=>{
+    const name = document.getElementById(nameId).value.trim();
+    const phone = document.getElementById(phoneId).value.trim();
+    if(!name){ showToast('نام مشتری را وارد کنید'); return; }
+    const c = { id: genId(), name, phone, address:'', description:'' };
+    appData.customers.push(c);
+    saveData();
+    renderCustomers();
+    refreshCustomerSelects();
+    sel.value = c.id;
+    wrap.classList.add('hidden');
+    document.getElementById(nameId).value = '';
+    document.getElementById(phoneId).value = '';
+    showToast('مشتری جدید ثبت شد');
+  });
+}
+
+function initDateSelects(){
+  const daySel = document.getElementById('p_day');
+  const monthSel = document.getElementById('p_month');
+  const yearSel = document.getElementById('p_year');
+
+  daySel.innerHTML = Array.from({length:31}, (_,i)=>i+1)
+    .map(d=>`<option value="${d}">${toPersianDigits(d)}</option>`).join('');
+  monthSel.innerHTML = PERSIAN_MONTHS
+    .map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+
+  const cur = todayJalali();
+  const years = [];
+  for(let y = cur.jy - 1; y <= cur.jy + 2; y++) years.push(y);
+  yearSel.innerHTML = years.map(y=>`<option value="${y}">${toPersianDigits(y)}</option>`).join('');
+
+  daySel.value = cur.jd;
+  monthSel.value = cur.jm;
+  yearSel.value = cur.jy;
+}
+
+function addLineItemRow(){
+  const wrap = document.getElementById('lineItemsWrap');
+  const row = document.createElement('div');
+  row.className = 'line-item-row';
+  const rowId = genId();
+  row.dataset.rowId = rowId;
+  row.innerHTML = `
+    <button type="button" class="li-remove" title="حذف ردیف">×</button>
+    <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">کالا</label>
+    <select class="li-product-select">
+      ${appData.products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}
+    </select>
+    <div class="li-grid" style="margin-top:8px;">
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">مقدار</label>
+        <input type="number" class="li-qty" value="1" min="0" step="any">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">قیمت واحد</label>
+        <input type="number" class="li-price" value="0" min="0" step="any">
+      </div>
+    </div>
+    <div class="li-amount">مبلغ: <span class="li-amount-val">۰</span> تومان</div>
+  `;
+  wrap.appendChild(row);
+
+  row.querySelector('.li-remove').addEventListener('click', ()=>{
+    row.remove();
+    calcPurchaseSummary();
+  });
+  row.querySelector('.li-qty').addEventListener('input', calcPurchaseSummary);
+  row.querySelector('.li-price').addEventListener('input', calcPurchaseSummary);
+  row.querySelector('.li-product-select').addEventListener('change', ()=>{
+    // پیش‌فرض قیمت واحد از آخرین قیمت خرید کالا
+    const pid = row.querySelector('.li-product-select').value;
+    const p = appData.products.find(x=>x.id===pid);
+    if(p && Number(row.querySelector('.li-price').value)===0){
+      row.querySelector('.li-price').value = p.lastPurchasePrice || p.purchasePrice || 0;
+      calcPurchaseSummary();
+    }
+  });
+
+  calcPurchaseSummary();
+}
+
+document.getElementById('addLineItemBtn').addEventListener('click', addLineItemRow);
+
+function getDirectCostTotal(){
+  let total = 0;
+  document.querySelectorAll('.dc-input').forEach(inp=>{ total += Number(inp.value) || 0; });
+  return total;
+}
+
+function calcPurchaseSummary(){
+  let itemsTotal = 0;
+  document.querySelectorAll('#lineItemsWrap .line-item-row').forEach(row=>{
+    const qty = Number(row.querySelector('.li-qty').value) || 0;
+    const price = Number(row.querySelector('.li-price').value) || 0;
+    const amount = qty * price;
+    row.querySelector('.li-amount-val').textContent = formatNumber(amount);
+    itemsTotal += amount;
+  });
+  const directTotal = getDirectCostTotal();
+  document.getElementById('sumItems').textContent = formatNumber(itemsTotal) + ' تومان';
+  document.getElementById('sumDirect').textContent = formatNumber(directTotal) + ' تومان';
+  document.getElementById('sumTotal').textContent = formatNumber(itemsTotal + directTotal) + ' تومان';
+  return { itemsTotal, directTotal };
+}
+
+document.querySelectorAll('.dc-input').forEach(inp=>{
+  inp.addEventListener('input', calcPurchaseSummary);
+});
+
+function renderPurchases(){
+  const wrap = document.getElementById('purchasesList');
+  let list = [...appData.purchases];
+  const supplierId = document.getElementById('pf_supplier').value;
+  const min = Number(document.getElementById('pf_min').value) || 0;
+  const max = Number(document.getElementById('pf_max').value) || 0;
+  const from = document.getElementById('pf_from').value;
+  const to = document.getElementById('pf_to').value;
+  if(supplierId) list = list.filter(p=>p.supplierId===supplierId);
+  if(min) list = list.filter(p=>p.grandTotal>=min);
+  if(max) list = list.filter(p=>p.grandTotal<=max);
+  if(from || to) list = list.filter(p=>inDateRange(p.date, from, to));
+  list.sort((a,b)=> b.createdAt - a.createdAt);
+  window.__lastPurchasesList = list;
+  if(list.length === 0){
+    wrap.innerHTML = '<p class="empty">خریدی یافت نشد.</p>';
+    return;
+  }
+  wrap.innerHTML = list.map(pu=>{
+    const supplier = appData.suppliers.find(s=>s.id===pu.supplierId);
+    const dateStr = `${toPersianDigits(pu.date.jy)}/${toPersianDigits(pu.date.jm)}/${toPersianDigits(pu.date.jd)}`;
+    return `
+    <div class="list-item">
+      <div class="li-title">خرید ${escapeHtml(pu.number)} — ${dateStr}</div>
+      <div class="li-sub">
+        تأمین‌کننده: ${escapeHtml(supplier ? supplier.name : '—')} &nbsp;|&nbsp;
+        ${pu.items.length} قلم &nbsp;|&nbsp;
+        بهای تمام‌شده کل: ${formatNumber(pu.grandTotal)} تومان
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('purchaseForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+
+  const rows = Array.from(document.querySelectorAll('#lineItemsWrap .line-item-row'));
+  if(rows.length === 0){ showToast('حداقل یک قلم کالا اضافه کنید'); return; }
+  if(appData.suppliers.length === 0){ showToast('ابتدا یک تأمین‌کننده ثبت کنید'); return; }
+
+  const { itemsTotal, directTotal } = calcPurchaseSummary();
+
+  const items = rows.map(row=>{
+    const productId = row.querySelector('.li-product-select').value;
+    const qty = Number(row.querySelector('.li-qty').value) || 0;
+    const unitPrice = Number(row.querySelector('.li-price').value) || 0;
+    const amount = qty * unitPrice;
+    const allocatedCost = itemsTotal > 0 ? directTotal * (amount / itemsTotal) : 0;
+    const totalCost = amount + allocatedCost;
+    const unitCost = qty > 0 ? totalCost / qty : 0;
+    return { productId, qty, unitPrice, amount, allocatedCost, totalCost, unitCost };
+  }).filter(it => it.productId && it.qty > 0);
+
+  if(items.length === 0){ showToast('اطلاعات اقلام کالا را کامل کنید'); return; }
+
+  const purchase = {
+    id: genId(),
+    number: document.getElementById('p_number').value.trim() || ('خ-' + (appData.purchases.length + 1)),
+    date: {
+      jy: Number(document.getElementById('p_year').value),
+      jm: Number(document.getElementById('p_month').value),
+      jd: Number(document.getElementById('p_day').value)
+    },
+    supplierId: document.getElementById('p_supplier').value,
+    quality: document.getElementById('p_quality').value || '',
+    items,
+    directCosts: {
+      taxiOrigin: Number(document.getElementById('dc_taxiOrigin').value)||0,
+      bus: Number(document.getElementById('dc_bus').value)||0,
+      taxiDest: Number(document.getElementById('dc_taxiDest').value)||0,
+      freight: Number(document.getElementById('dc_freight').value)||0,
+      truck: Number(document.getElementById('dc_truck').value)||0,
+      loading: Number(document.getElementById('dc_loading').value)||0,
+      unloading: Number(document.getElementById('dc_unloading').value)||0,
+      warehouse: Number(document.getElementById('dc_warehouse').value)||0,
+      packing: Number(document.getElementById('dc_packing').value)||0,
+      other: Number(document.getElementById('dc_other').value)||0
+    },
+    itemsTotal,
+    directCostTotal: directTotal,
+    grandTotal: itemsTotal + directTotal,
+    createdAt: Date.now()
+  };
+
+  // به‌روزرسانی موجودی و بهای تمام‌شده کالاها (میانگین موزون ساده)
+  items.forEach(it=>{
+    const p = appData.products.find(x=>x.id===it.productId);
+    if(!p) return;
+    const oldStock = Number(p.stock) || 0;
+    const oldAvg = Number(p.avgPurchasePrice) || 0;
+    const newStock = oldStock + it.qty;
+    const newAvg = newStock > 0 ? ((oldStock*oldAvg) + (it.qty*it.unitCost)) / newStock : it.unitCost;
+    p.stock = newStock;
+    p.lastPurchasePrice = it.unitPrice;
+    p.avgPurchasePrice = newAvg;
+  });
+
+  appData.purchases.push(purchase);
+  saveData();
+
+  // بازنشانی فرم
+  document.getElementById('purchaseForm').reset();
+  document.getElementById('lineItemsWrap').innerHTML = '';
+  initDateSelects();
+  addLineItemRow();
+  calcPurchaseSummary();
+
+  renderPurchases();
+  renderProducts();
+  populateYearSelect();
+  renderDashboard();
+  showToast('خرید با موفقیت ثبت شد');
+});
+
+/* =========================================================
+   ۱۲) فروش، بهای تمام‌شده، سود و فاکتور
+   ========================================================= */
+let editingSaleId = null;
+
+function initSaleDateSelects(){
+  const daySel = document.getElementById('s_day');
+  const monthSel = document.getElementById('s_month');
+  const yearSel = document.getElementById('s_year');
+
+  daySel.innerHTML = Array.from({length:31}, (_,i)=>i+1)
+    .map(d=>`<option value="${d}">${toPersianDigits(d)}</option>`).join('');
+  monthSel.innerHTML = PERSIAN_MONTHS
+    .map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+
+  const cur = todayJalali();
+  const years = [];
+  for(let y = cur.jy - 1; y <= cur.jy + 2; y++) years.push(y);
+  yearSel.innerHTML = years.map(y=>`<option value="${y}">${toPersianDigits(y)}</option>`).join('');
+
+  daySel.value = cur.jd;
+  monthSel.value = cur.jm;
+  yearSel.value = cur.jy;
+}
+
+// موجودی «مؤثر» یک کالا برای اعتبارسنجی: موجودی فعلی + مقداری که در فروش در حال ویرایش قبلاً از همین کالا کم شده بود
+function effectiveStock(productId){
+  const p = appData.products.find(x=>x.id===productId);
+  if(!p) return 0;
+  let stock = Number(p.stock) || 0;
+  if(editingSaleId){
+    const old = appData.sales.find(s=>s.id===editingSaleId);
+    if(old){
+      old.items.forEach(it=>{ if(it.productId === productId) stock += Number(it.qty)||0; });
+    }
+  }
+  return stock;
+}
+
+function addSaleLineItemRow(prefill){
+  const wrap = document.getElementById('saleLineItemsWrap');
+  const row = document.createElement('div');
+  row.className = 'line-item-row';
+  row.innerHTML = `
+    <button type="button" class="li-remove" title="حذف ردیف">×</button>
+    <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">کالا</label>
+    <select class="si-product-select">
+      ${appData.products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} (موجودی: ${formatNumber(p.stock)})</option>`).join('')}
+    </select>
+    <div class="si-grid3" style="margin-top:8px;">
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">مقدار</label>
+        <input type="number" class="si-qty" value="1" min="0" step="any">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">قیمت واحد</label>
+        <input type="number" class="si-price" value="0" min="0" step="any">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">تخفیف</label>
+        <input type="number" class="si-discount" value="0" min="0" step="any">
+      </div>
+    </div>
+    <div class="li-amount">مبلغ ردیف: <span class="si-amount-val">۰</span> تومان</div>
+    <div class="stock-warn hidden">موجودی کافی نیست</div>
+  `;
+  wrap.appendChild(row);
+
+  const productSel = row.querySelector('.si-product-select');
+  const qtyInp = row.querySelector('.si-qty');
+  const priceInp = row.querySelector('.si-price');
+  const discInp = row.querySelector('.si-discount');
+
+  if(prefill){
+    productSel.value = prefill.productId;
+    qtyInp.value = prefill.qty;
+    priceInp.value = prefill.unitPrice;
+    discInp.value = prefill.discount || 0;
+  } else if(productSel.value){
+    const p = appData.products.find(x=>x.id===productSel.value);
+    if(p) priceInp.value = p.salePrice || 0;
+  }
+
+  row.querySelector('.li-remove').addEventListener('click', ()=>{
+    row.remove();
+    calcSaleSummary();
+  });
+  qtyInp.addEventListener('input', calcSaleSummary);
+  priceInp.addEventListener('input', calcSaleSummary);
+  discInp.addEventListener('input', calcSaleSummary);
+  productSel.addEventListener('change', ()=>{
+    const p = appData.products.find(x=>x.id===productSel.value);
+    if(p) priceInp.value = p.salePrice || 0;
+    calcSaleSummary();
+  });
+
+  calcSaleSummary();
+}
+
+document.getElementById('addSaleLineItemBtn').addEventListener('click', ()=>addSaleLineItemRow());
+
+function calcSaleSummary(){
+  let subtotal = 0, discountTotal = 0, cogs = 0;
+  document.querySelectorAll('#saleLineItemsWrap .line-item-row').forEach(row=>{
+    const productId = row.querySelector('.si-product-select').value;
+    const qty = Number(row.querySelector('.si-qty').value) || 0;
+    const price = Number(row.querySelector('.si-price').value) || 0;
+    const discount = Number(row.querySelector('.si-discount').value) || 0;
+    const rowAmount = Math.max(0, (qty * price) - discount);
+    row.querySelector('.si-amount-val').textContent = formatNumber(rowAmount);
+
+    const warnEl = row.querySelector('.stock-warn');
+    const avail = effectiveStock(productId);
+    if(qty > avail){
+      warnEl.textContent = `موجودی کافی نیست (موجود: ${formatNumber(avail)})`;
+      warnEl.classList.remove('hidden');
+    } else {
+      warnEl.classList.add('hidden');
+    }
+
+    subtotal += qty * price;
+    discountTotal += discount;
+    const p = appData.products.find(x=>x.id===productId);
+    if(p) cogs += qty * (Number(p.avgPurchasePrice) || 0);
+  });
+
+  const netSales = subtotal - discountTotal;
+  const grossProfit = netSales - cogs;
+  const margin = netSales > 0 ? (grossProfit / netSales) * 100 : 0;
+
+  document.getElementById('sSubtotal').textContent = formatNumber(subtotal) + ' تومان';
+  document.getElementById('sDiscount').textContent = formatNumber(discountTotal) + ' تومان';
+  document.getElementById('sNet').textContent = formatNumber(netSales) + ' تومان';
+  document.getElementById('sCogs').textContent = formatNumber(cogs) + ' تومان';
+  document.getElementById('sGrossProfit').textContent = formatNumber(grossProfit) + ' تومان';
+  document.getElementById('sMargin').textContent = toPersianDigits(margin.toFixed(1)) + '٪';
+
+  return { subtotal, discountTotal, netSales, cogs, grossProfit, margin };
+}
+
+function resetSaleForm(){
+  editingSaleId = null;
+  document.getElementById('saleForm').reset();
+  document.getElementById('saleLineItemsWrap').innerHTML = '';
+  document.getElementById('saleFormTitle').textContent = 'ثبت فروش جدید';
+  document.getElementById('cancelSaleEditBtn').classList.add('hidden');
+  document.getElementById('s_customerQuickAdd').classList.add('hidden');
+  refreshCustomerSelects();
+  initSaleDateSelects();
+  addSaleLineItemRow();
+  calcSaleSummary();
+}
+
+document.getElementById('cancelSaleEditBtn').addEventListener('click', resetSaleForm);
+
+document.getElementById('saleForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+
+  const rows = Array.from(document.querySelectorAll('#saleLineItemsWrap .line-item-row'));
+  if(rows.length === 0){ showToast('حداقل یک قلم کالا اضافه کنید'); return; }
+
+  const custSelectVal = document.getElementById('s_customer').value;
+  if(custSelectVal === '__new__'){ showToast('لطفاً ابتدا مشتری جدید را با دکمه «افزودن و انتخاب» ثبت کنید'); return; }
+
+  const orderId = document.getElementById('s_orderId').value || null;
+  let linkedOrder = null;
+  if(orderId){
+    linkedOrder = appData.orders.find(o=>o.id===orderId);
+    if(linkedOrder && linkedOrder.linkedSaleId && linkedOrder.linkedSaleId !== editingSaleId){
+      showToast('این سفارش قبلاً به فروش تبدیل شده است');
+      return;
+    }
+  }
+
+  const number = document.getElementById('s_number').value.trim() || ('ف-' + (appData.sales.length + 1));
+  const dup = appData.sales.find(s => s.number === number && s.id !== editingSaleId);
+  if(dup){ showToast('این شماره فاکتور قبلاً استفاده شده است'); return; }
+
+  const date = {
+    jy: Number(document.getElementById('s_year').value),
+    jm: Number(document.getElementById('s_month').value),
+    jd: Number(document.getElementById('s_day').value)
+  };
+  if(!date.jy || !date.jm || !date.jd){ showToast('تاریخ فروش الزامی است'); return; }
+
+  // اعتبارسنجی کامل ردیف‌ها قبل از هر تغییری
+  const items = [];
+  for(const row of rows){
+    const productId = row.querySelector('.si-product-select').value;
+    const qty = Number(row.querySelector('.si-qty').value) || 0;
+    const unitPrice = Number(row.querySelector('.si-price').value) || 0;
+    const discount = Number(row.querySelector('.si-discount').value) || 0;
+
+    if(!productId){ showToast('کالا را برای همه ردیف‌ها انتخاب کنید'); return; }
+    if(qty <= 0){ showToast('مقدار فروش باید بزرگ‌تر از صفر باشد'); return; }
+    if(unitPrice < 0 || discount < 0){ showToast('قیمت و تخفیف نمی‌توانند منفی باشند'); return; }
+    if(discount > qty * unitPrice){ showToast('تخفیف نمی‌تواند بیشتر از مبلغ فروش همان ردیف باشد'); return; }
+
+    const avail = effectiveStock(productId);
+    if(qty > avail){
+      const p = appData.products.find(x=>x.id===productId);
+      showToast(`موجودی «${p ? p.name : 'کالا'}» کافی نیست (موجود: ${formatNumber(avail)})`);
+      return;
+    }
+
+    const p = appData.products.find(x=>x.id===productId);
+    items.push({
+      productId, qty, unitPrice, discount,
+      amount: Math.max(0, qty*unitPrice - discount),
+      unitCost: p ? (Number(p.avgPurchasePrice)||0) : 0
+    });
+  }
+  if(items.length === 0){ showToast('اطلاعات اقلام فروش را کامل کنید'); return; }
+
+  const subtotal = items.reduce((a,it)=>a + it.qty*it.unitPrice, 0);
+  const discountTotal = items.reduce((a,it)=>a + it.discount, 0);
+  const netSales = subtotal - discountTotal;
+  const cogs = items.reduce((a,it)=>a + it.qty*it.unitCost, 0);
+  const grossProfit = netSales - cogs;
+
+  // اگر در حال ویرایش هستیم، ابتدا موجودی فروش قبلی را برگردان
+  if(editingSaleId){
+    const old = appData.sales.find(s=>s.id===editingSaleId);
+    if(old){
+      old.items.forEach(it=>{
+        const p = appData.products.find(x=>x.id===it.productId);
+        if(p) p.stock = (Number(p.stock)||0) + it.qty;
+      });
+    }
+  }
+
+  // کسر موجودی بر اساس اقلام جدید
+  items.forEach(it=>{
+    const p = appData.products.find(x=>x.id===it.productId);
+    if(p) p.stock = (Number(p.stock)||0) - it.qty;
+  });
+
+  // مشتری: اگر آیتم واقعی انتخاب شده، customerId ذخیره می‌شود؛ در غیر این‌صورت نام قدیمی (Migration) حفظ می‌شود
+  let customerId = null, customerName = '';
+  if(custSelectVal && custSelectVal === '__legacy__'){
+    customerName = document.getElementById('s_legacyName').value || '';
+  } else if(custSelectVal){
+    const c = appData.customers.find(x=>x.id===custSelectVal);
+    if(c){ customerId = c.id; customerName = c.name; }
+  }
+
+  const saleRecord = {
+    id: editingSaleId || genId(),
+    number, date,
+    customerId,
+    customer: customerName,
+    orderId: orderId || null,
+    notes: document.getElementById('s_notes').value.trim(),
+    items, subtotal, discountTotal, netSales, cogs, grossProfit,
+    status: 'ثبت شده',
+    createdAt: editingSaleId ? (appData.sales.find(s=>s.id===editingSaleId)?.createdAt || Date.now()) : Date.now()
+  };
+
+  if(editingSaleId){
+    appData.sales = appData.sales.map(s => s.id === editingSaleId ? saleRecord : s);
+  } else {
+    appData.sales.push(saleRecord);
+  }
+
+  if(linkedOrder){
+    linkedOrder.linkedSaleId = saleRecord.id;
+  }
+
+  saveData();
+  resetSaleForm();
+  renderSales();
+  renderProducts();
+  renderCustomers();
+  if(typeof renderOrders === 'function') renderOrders();
+  populateYearSelect();
+  renderDashboard();
+  showToast('فروش با موفقیت ثبت شد');
+});
+
+function renderSales(){
+  const wrap = document.getElementById('salesList');
+  let list = [...appData.sales];
+  const customerId = document.getElementById('sf_customer').value;
+  const min = Number(document.getElementById('sf_min').value) || 0;
+  const max = Number(document.getElementById('sf_max').value) || 0;
+  const from = document.getElementById('sf_from').value;
+  const to = document.getElementById('sf_to').value;
+  if(customerId) list = list.filter(s=>s.customerId===customerId);
+  if(min) list = list.filter(s=>s.netSales>=min);
+  if(max) list = list.filter(s=>s.netSales<=max);
+  if(from || to) list = list.filter(s=>inDateRange(s.date, from, to));
+  list.sort((a,b)=> b.createdAt - a.createdAt);
+  window.__lastSalesList = list;
+  if(list.length === 0){
+    wrap.innerHTML = '<p class="empty">فروشی یافت نشد.</p>';
+    return;
+  }
+  wrap.innerHTML = list.map(s=>{
+    const dateStr = `${toPersianDigits(s.date.jy)}/${toPersianDigits(s.date.jm)}/${toPersianDigits(s.date.jd)}`;
+    return `
+    <div class="list-item">
+      <div class="li-title">فاکتور ${escapeHtml(s.number)} — ${dateStr}</div>
+      <div class="li-sub">
+        مشتری: ${escapeHtml(s.customer || '—')} &nbsp;|&nbsp;
+        مبلغ نهایی: ${formatNumber(s.netSales)} تومان &nbsp;|&nbsp;
+        سود ناخالص: ${formatNumber(s.grossProfit)} تومان
+      </div>
+      <div style="margin-top:6px;"><span class="badge status-badge">${escapeHtml(s.status||'ثبت شده')}</span></div>
+      <div class="li-actions">
+        <button class="btn btn-sm btn-outline" onclick="viewInvoice('${s.id}')">مشاهده فاکتور</button>
+        <button class="btn btn-sm btn-outline" onclick="editSale('${s.id}')">ویرایش</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSale('${s.id}')">حذف</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editSale(id){
+  const s = appData.sales.find(x=>x.id===id);
+  if(!s) return;
+  editingSaleId = id;
+  document.getElementById('saleFormTitle').textContent = 'ویرایش فروش: ' + s.number;
+  document.getElementById('cancelSaleEditBtn').classList.remove('hidden');
+  document.getElementById('s_number').value = s.number;
+  document.getElementById('s_notes').value = s.notes || '';
+  document.getElementById('s_orderId').value = s.orderId || '';
+
+  refreshCustomerSelects();
+  const custSel = document.getElementById('s_customer');
+  document.getElementById('s_customerQuickAdd').classList.add('hidden');
+  document.getElementById('s_legacyName').value = '';
+  if(s.customerId && appData.customers.some(c=>c.id===s.customerId)){
+    custSel.value = s.customerId;
+  } else if(s.customer){
+    // داده قدیمی (بدون اتصال به مشتری): یک گزینه موقت اضافه می‌شود تا اطلاعات از بین نرود
+    const opt = document.createElement('option');
+    opt.value = '__legacy__';
+    opt.textContent = s.customer + ' (بدون اتصال به لیست مشتریان)';
+    custSel.insertBefore(opt, custSel.lastElementChild);
+    custSel.value = '__legacy__';
+    document.getElementById('s_legacyName').value = s.customer;
+  } else {
+    custSel.value = '';
+  }
+
+  initSaleDateSelects();
+  document.getElementById('s_year').value = s.date.jy;
+  document.getElementById('s_month').value = s.date.jm;
+  document.getElementById('s_day').value = s.date.jd;
+
+  document.getElementById('saleLineItemsWrap').innerHTML = '';
+  s.items.forEach(it => addSaleLineItemRow(it));
+  calcSaleSummary();
+
+  switchPage('sales');
+  document.getElementById('page-sales').scrollIntoView({behavior:'smooth'});
+}
+
+function deleteSale(id){
+  const s = appData.sales.find(x=>x.id===id);
+  if(!s) return;
+  if(!confirm('فاکتور «'+s.number+'» حذف شود؟ موجودی کالاها به حالت قبل برمی‌گردد.')) return;
+
+  s.items.forEach(it=>{
+    const p = appData.products.find(x=>x.id===it.productId);
+    if(p) p.stock = (Number(p.stock)||0) + it.qty;
+  });
+
+  if(s.orderId){
+    const ord = appData.orders.find(o=>o.id===s.orderId);
+    if(ord && ord.linkedSaleId === s.id) ord.linkedSaleId = null;
+  }
+
+  appData.sales = appData.sales.filter(x=>x.id!==id);
+
+  if(editingSaleId === id) resetSaleForm();
+
+  saveData();
+  renderSales();
+  renderProducts();
+  renderCustomers();
+  if(typeof renderOrders === 'function') renderOrders();
+  renderDashboard();
+  showToast('فروش حذف شد و موجودی برگشت');
+}
+
+function buildInvoiceHtml(s){
+  const dateStr = `${toPersianDigits(s.date.jy)}/${toPersianDigits(s.date.jm)}/${toPersianDigits(s.date.jd)}`;
+  const biz = appData.settings || {};
+  const rows = s.items.map(it=>{
+    const p = appData.products.find(x=>x.id===it.productId);
+    return `<tr>
+      <td>${escapeHtml(p ? p.name : '—')}</td>
+      <td>${formatNumber(it.qty)} ${escapeHtml(p ? (p.unit||'') : '')}</td>
+      <td>${formatNumber(it.unitPrice)}</td>
+      <td>${formatNumber(it.discount)}</td>
+      <td>${formatNumber(it.amount)}</td>
+    </tr>`;
+  }).join('');
+
+  return `
+    <h3>${escapeHtml(biz.bizName || 'کسب‌وکار')}</h3>
+    <div class="inv-meta">
+      <span>${escapeHtml(biz.phone||'')} ${biz.address ? '— '+escapeHtml(biz.address) : ''}</span>
+      <span>فاکتور ${escapeHtml(s.number)} — ${dateStr}</span>
+    </div>
+    <div>مشتری: ${escapeHtml(s.customer || '—')}</div>
+    <table>
+      <thead><tr><th>کالا</th><th>مقدار</th><th>قیمت واحد</th><th>تخفیف</th><th>مبلغ</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot>
+        <tr><td colspan="4">جمع فروش</td><td>${formatNumber(s.subtotal)}</td></tr>
+        <tr><td colspan="4">جمع تخفیف</td><td>${formatNumber(s.discountTotal)}</td></tr>
+        <tr><td colspan="4">مبلغ نهایی</td><td>${formatNumber(s.netSales)}</td></tr>
+      </tfoot>
+    </table>
+    ${s.notes ? '<div style="margin-top:8px;">توضیحات: '+escapeHtml(s.notes)+'</div>' : ''}
+    <div class="invoice-sign">
+      <div class="sign-box">امضای فروشنده</div>
+      <div class="invoice-brand"><img src="${BRAND_LOGO_DATA_URI}" alt="شهد شیرین"><span>شهد شیرین</span></div>
+      <div class="sign-box">امضای خریدار</div>
+    </div>
+  `;
+}
+
+let currentInvoiceSaleId = null;
+
+function viewInvoice(id){
+  const s = appData.sales.find(x=>x.id===id);
+  if(!s) return;
+  currentInvoiceSaleId = id;
+  document.getElementById('invoiceViewContent').innerHTML = buildInvoiceHtml(s);
+  const card = document.getElementById('invoiceViewCard');
+  card.classList.remove('hidden');
+  card.scrollIntoView({behavior:'smooth'});
+}
+
+document.getElementById('closeInvoiceBtn').addEventListener('click', ()=>{
+  document.getElementById('invoiceViewCard').classList.add('hidden');
+  currentInvoiceSaleId = null;
+});
+
+document.getElementById('printInvoiceBtn').addEventListener('click', ()=>{
+  if(!currentInvoiceSaleId) return;
+  const s = appData.sales.find(x=>x.id===currentInvoiceSaleId);
+  if(!s) return;
+  document.getElementById('invoicePrintArea').innerHTML = '<div class="invoice-box">'+buildInvoiceHtml(s)+'</div>';
+  window.print();
+});
+
+/* =========================================================
+   ۱۴) سفارش‌ها
+   ========================================================= */
+let editingOrderId = null;
+
+const ORDER_STATUSES = ['جدید','تأیید شده','در حال آماده‌سازی','آماده تحویل','تحویل شده','لغو شده'];
+const ORDER_STATUS_CLASS = {
+  'جدید':'status-new',
+  'تأیید شده':'status-confirmed',
+  'در حال آماده‌سازی':'status-prep',
+  'آماده تحویل':'status-ready',
+  'تحویل شده':'status-delivered',
+  'لغو شده':'status-cancelled'
+};
+
+function initOrderDateSelects(){
+  [['o_day','o_month','o_year'], ['o_d_day','o_d_month','o_d_year']].forEach(([dId,mId,yId])=>{
+    const daySel = document.getElementById(dId);
+    const monthSel = document.getElementById(mId);
+    const yearSel = document.getElementById(yId);
+    daySel.innerHTML = Array.from({length:31}, (_,i)=>i+1)
+      .map(d=>`<option value="${d}">${toPersianDigits(d)}</option>`).join('');
+    monthSel.innerHTML = PERSIAN_MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+    const cur = todayJalali();
+    const years = [];
+    for(let y = cur.jy - 1; y <= cur.jy + 2; y++) years.push(y);
+    yearSel.innerHTML = years.map(y=>`<option value="${y}">${toPersianDigits(y)}</option>`).join('');
+    daySel.value = cur.jd; monthSel.value = cur.jm; yearSel.value = cur.jy;
+  });
+}
+
+function addOrderLineItemRow(prefill){
+  const wrap = document.getElementById('orderLineItemsWrap');
+  const row = document.createElement('div');
+  row.className = 'line-item-row';
+  row.innerHTML = `
+    <button type="button" class="li-remove" title="حذف ردیف">×</button>
+    <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">کالا</label>
+    <select class="oi-product-select">
+      ${appData.products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}
+    </select>
+    <div class="si-grid3" style="margin-top:8px;">
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">مقدار</label>
+        <input type="number" class="oi-qty" value="1" min="0" step="any">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">قیمت واحد</label>
+        <input type="number" class="oi-price" value="0" min="0" step="any">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">تخفیف</label>
+        <input type="number" class="oi-discount" value="0" min="0" step="any">
+      </div>
+    </div>
+    <div class="li-amount">مبلغ ردیف: <span class="oi-amount-val">۰</span> تومان</div>
+  `;
+  wrap.appendChild(row);
+
+  const productSel = row.querySelector('.oi-product-select');
+  const qtyInp = row.querySelector('.oi-qty');
+  const priceInp = row.querySelector('.oi-price');
+  const discInp = row.querySelector('.oi-discount');
+
+  if(prefill){
+    productSel.value = prefill.productId;
+    qtyInp.value = prefill.qty;
+    priceInp.value = prefill.unitPrice;
+    discInp.value = prefill.discount || 0;
+  } else if(productSel.value){
+    const p = appData.products.find(x=>x.id===productSel.value);
+    if(p) priceInp.value = p.salePrice || 0;
+  }
+
+  row.querySelector('.li-remove').addEventListener('click', ()=>{ row.remove(); calcOrderSummary(); });
+  qtyInp.addEventListener('input', calcOrderSummary);
+  priceInp.addEventListener('input', calcOrderSummary);
+  discInp.addEventListener('input', calcOrderSummary);
+  productSel.addEventListener('change', ()=>{
+    const p = appData.products.find(x=>x.id===productSel.value);
+    if(p) priceInp.value = p.salePrice || 0;
+    calcOrderSummary();
+  });
+
+  calcOrderSummary();
+}
+
+document.getElementById('addOrderLineItemBtn').addEventListener('click', ()=>addOrderLineItemRow());
+
+function calcOrderSummary(){
+  let subtotal = 0, discountTotal = 0;
+  document.querySelectorAll('#orderLineItemsWrap .line-item-row').forEach(row=>{
+    const qty = Number(row.querySelector('.oi-qty').value) || 0;
+    const price = Number(row.querySelector('.oi-price').value) || 0;
+    const discount = Number(row.querySelector('.oi-discount').value) || 0;
+    const rowAmount = Math.max(0, qty*price - discount);
+    row.querySelector('.oi-amount-val').textContent = formatNumber(rowAmount);
+    subtotal += qty*price;
+    discountTotal += discount;
+  });
+  const shipping = Number(document.getElementById('o_shippingCost').value) || 0;
+  const net = subtotal - discountTotal;
+  const grand = net + shipping;
+  document.getElementById('oSubtotal').textContent = formatNumber(subtotal) + ' تومان';
+  document.getElementById('oDiscount').textContent = formatNumber(discountTotal) + ' تومان';
+  document.getElementById('oShipping').textContent = formatNumber(shipping) + ' تومان';
+  document.getElementById('oTotal').textContent = formatNumber(grand) + ' تومان';
+  return { subtotal, discountTotal, net, shipping, grand };
+}
+document.getElementById('o_shippingCost').addEventListener('input', calcOrderSummary);
+
+function resetOrderForm(){
+  editingOrderId = null;
+  document.getElementById('orderForm').reset();
+  document.getElementById('orderLineItemsWrap').innerHTML = '';
+  document.getElementById('orderFormTitle').textContent = 'ثبت سفارش جدید';
+  document.getElementById('cancelOrderEditBtn').classList.add('hidden');
+  document.getElementById('o_customerQuickAdd').classList.add('hidden');
+  document.getElementById('o_status').value = 'جدید';
+  refreshCustomerSelects();
+  initOrderDateSelects();
+  addOrderLineItemRow();
+  calcOrderSummary();
+}
+document.getElementById('cancelOrderEditBtn').addEventListener('click', resetOrderForm);
+
+document.getElementById('o_customer').addEventListener('change', function(){
+  if(this.value && this.value !== '__new__'){
+    const c = appData.customers.find(x=>x.id===this.value);
+    if(c && c.phone) document.getElementById('o_customerPhone').value = c.phone;
+  }
+});
+
+document.getElementById('orderForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+
+  const rows = Array.from(document.querySelectorAll('#orderLineItemsWrap .line-item-row'));
+  if(rows.length === 0){ showToast('حداقل یک قلم کالا اضافه کنید'); return; }
+
+  const custSelectVal = document.getElementById('o_customer').value;
+  if(custSelectVal === '__new__'){ showToast('لطفاً ابتدا مشتری جدید را با دکمه «افزودن و انتخاب» ثبت کنید'); return; }
+
+  const number = document.getElementById('o_number').value.trim() || ('س-' + (appData.orders.length + 1));
+  const dup = appData.orders.find(o => o.number === number && o.id !== editingOrderId);
+  if(dup){ showToast('این شماره سفارش قبلاً استفاده شده است'); return; }
+
+  const date = {
+    jy: Number(document.getElementById('o_year').value),
+    jm: Number(document.getElementById('o_month').value),
+    jd: Number(document.getElementById('o_day').value)
+  };
+
+  const items = [];
+  for(const row of rows){
+    const productId = row.querySelector('.oi-product-select').value;
+    const qty = Number(row.querySelector('.oi-qty').value) || 0;
+    const unitPrice = Number(row.querySelector('.oi-price').value) || 0;
+    const discount = Number(row.querySelector('.oi-discount').value) || 0;
+    if(!productId){ showToast('کالا را برای همه ردیف‌ها انتخاب کنید'); return; }
+    if(qty <= 0){ showToast('مقدار سفارش باید بزرگ‌تر از صفر باشد'); return; }
+    if(unitPrice < 0 || discount < 0){ showToast('قیمت و تخفیف نمی‌توانند منفی باشند'); return; }
+    if(discount > qty * unitPrice){ showToast('تخفیف نمی‌تواند بیشتر از مبلغ ردیف باشد'); return; }
+    items.push({ productId, qty, unitPrice, discount, amount: Math.max(0, qty*unitPrice - discount) });
+  }
+  if(items.length === 0){ showToast('اطلاعات اقلام سفارش را کامل کنید'); return; }
+
+  const subtotal = items.reduce((a,it)=>a + it.qty*it.unitPrice, 0);
+  const discountTotal = items.reduce((a,it)=>a + it.discount, 0);
+  const shippingCost = Number(document.getElementById('o_shippingCost').value) || 0;
+  const netTotal = subtotal - discountTotal;
+  const grandTotal = netTotal + shippingCost;
+
+  let customerId = null, customerName = '';
+  if(custSelectVal){
+    const c = appData.customers.find(x=>x.id===custSelectVal);
+    if(c){ customerId = c.id; customerName = c.name; }
+  }
+
+  const existing = editingOrderId ? appData.orders.find(o=>o.id===editingOrderId) : null;
+
+  const orderRecord = {
+    id: editingOrderId || genId(),
+    number, date,
+    customerId, customer: customerName,
+    customerPhone: document.getElementById('o_customerPhone').value.trim(),
+    items, subtotal, discountTotal, netTotal, shippingCost, grandTotal,
+    deliveryDate: {
+      jy: Number(document.getElementById('o_d_year').value),
+      jm: Number(document.getElementById('o_d_month').value),
+      jd: Number(document.getElementById('o_d_day').value)
+    },
+    deliveryLocation: document.getElementById('o_deliveryLocation').value.trim(),
+    notes: document.getElementById('o_notes').value.trim(),
+    status: document.getElementById('o_status').value,
+    linkedSaleId: existing ? (existing.linkedSaleId || null) : null,
+    createdAt: existing ? existing.createdAt : Date.now()
+  };
+
+  if(editingOrderId){
+    appData.orders = appData.orders.map(o => o.id === editingOrderId ? orderRecord : o);
+  } else {
+    appData.orders.push(orderRecord);
+  }
+
+  saveData();
+  resetOrderForm();
+  renderOrders();
+  renderCustomers();
+  populateYearSelect();
+  showToast('سفارش با موفقیت ثبت شد');
+});
+
+function renderOrders(){
+  const wrap = document.getElementById('ordersList');
+  let list = [...appData.orders];
+  const status = document.getElementById('of_status').value;
+  const customerId = document.getElementById('of_customer').value;
+  const min = Number(document.getElementById('of_min').value) || 0;
+  const max = Number(document.getElementById('of_max').value) || 0;
+  if(status) list = list.filter(o=>o.status===status);
+  if(customerId) list = list.filter(o=>o.customerId===customerId);
+  if(min) list = list.filter(o=>o.grandTotal>=min);
+  if(max) list = list.filter(o=>o.grandTotal<=max);
+  list.sort((a,b)=> b.createdAt - a.createdAt);
+  window.__lastOrdersList = list;
+  if(list.length === 0){
+    wrap.innerHTML = '<p class="empty">سفارشی یافت نشد.</p>';
+    return;
+  }
+  wrap.innerHTML = list.map(o=>{
+    const dateStr = jalaliStr(o.date);
+    const deliveryStr = o.deliveryDate ? jalaliStr(o.deliveryDate) : '—';
+    const cls = ORDER_STATUS_CLASS[o.status] || 'status-new';
+    const canConvert = o.status === 'تحویل شده' && !o.linkedSaleId;
+    return `
+    <div class="list-item">
+      <div class="li-title">سفارش ${escapeHtml(o.number)} — ${dateStr}</div>
+      <div class="li-sub">
+        مشتری: ${escapeHtml(o.customer || '—')} &nbsp;|&nbsp;
+        مبلغ کل: ${formatNumber(o.grandTotal)} تومان &nbsp;|&nbsp;
+        تحویل: ${deliveryStr}
+      </div>
+      <div style="margin-top:6px;">
+        <span class="badge ${cls}">${escapeHtml(o.status)}</span>
+        ${o.linkedSaleId ? '<span class="badge status-delivered">تبدیل به فروش شده</span>' : ''}
+      </div>
+      <div class="li-actions">
+        <button class="btn btn-sm btn-outline" onclick="editOrder('${o.id}')">ویرایش</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteOrder('${o.id}')">حذف</button>
+        ${canConvert ? `<button class="btn btn-sm" onclick="convertOrderToSale('${o.id}')">تبدیل به فروش</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editOrder(id){
+  const o = appData.orders.find(x=>x.id===id);
+  if(!o) return;
+  editingOrderId = id;
+  document.getElementById('orderFormTitle').textContent = 'ویرایش سفارش: ' + o.number;
+  document.getElementById('cancelOrderEditBtn').classList.remove('hidden');
+  document.getElementById('o_number').value = o.number;
+  document.getElementById('o_customerPhone').value = o.customerPhone || '';
+  document.getElementById('o_deliveryLocation').value = o.deliveryLocation || '';
+  document.getElementById('o_shippingCost').value = o.shippingCost || 0;
+  document.getElementById('o_notes').value = o.notes || '';
+  document.getElementById('o_status').value = o.status || 'جدید';
+
+  refreshCustomerSelects();
+  document.getElementById('o_customerQuickAdd').classList.add('hidden');
+  if(o.customerId) document.getElementById('o_customer').value = o.customerId;
+
+  initOrderDateSelects();
+  document.getElementById('o_year').value = o.date.jy;
+  document.getElementById('o_month').value = o.date.jm;
+  document.getElementById('o_day').value = o.date.jd;
+  if(o.deliveryDate){
+    document.getElementById('o_d_year').value = o.deliveryDate.jy;
+    document.getElementById('o_d_month').value = o.deliveryDate.jm;
+    document.getElementById('o_d_day').value = o.deliveryDate.jd;
+  }
+
+  document.getElementById('orderLineItemsWrap').innerHTML = '';
+  o.items.forEach(it => addOrderLineItemRow(it));
+  calcOrderSummary();
+
+  switchPage('orders');
+  document.getElementById('page-orders').scrollIntoView({behavior:'smooth'});
+}
+
+function deleteOrder(id){
+  const o = appData.orders.find(x=>x.id===id);
+  if(!o) return;
+  const msg = o.linkedSaleId
+    ? `سفارش «${o.number}» حذف شود؟ این سفارش قبلاً به یک فروش تبدیل شده و آن فروش دست‌نخورده باقی می‌ماند.`
+    : `سفارش «${o.number}» حذف شود؟`;
+  if(!confirm(msg)) return;
+  appData.orders = appData.orders.filter(x=>x.id!==id);
+  if(editingOrderId === id) resetOrderForm();
+  saveData();
+  renderOrders();
+  showToast('سفارش حذف شد');
+}
+
+function convertOrderToSale(orderId){
+  const order = appData.orders.find(o=>o.id===orderId);
+  if(!order) return;
+  if(order.linkedSaleId){ showToast('این سفارش قبلاً به فروش تبدیل شده است'); return; }
+  if(order.status !== 'تحویل شده'){ showToast('فقط سفارش تحویل‌شده قابل تبدیل به فروش است'); return; }
+
+  switchPage('sales');
+  resetSaleForm();
+
+  document.getElementById('s_notes').value = order.notes ? (order.notes + ' (از سفارش ' + order.number + ')') : ('از سفارش ' + order.number);
+  document.getElementById('s_orderId').value = order.id;
+
+  document.getElementById('s_year').value = order.date.jy;
+  document.getElementById('s_month').value = order.date.jm;
+  document.getElementById('s_day').value = order.date.jd;
+
+  if(order.customerId){
+    document.getElementById('s_customer').value = order.customerId;
+  }
+
+  document.getElementById('saleLineItemsWrap').innerHTML = '';
+  order.items.forEach(it=>{
+    addSaleLineItemRow({ productId: it.productId, qty: it.qty, unitPrice: it.unitPrice, discount: it.discount });
+  });
+  calcSaleSummary();
+
+  document.getElementById('page-sales').scrollIntoView({behavior:'smooth'});
+  showToast('اطلاعات سفارش به فرم فروش منتقل شد؛ لطفاً ثبت فروش را تکمیل کنید');
+}
+
+/* =========================================================
+   ۱۵) هزینه‌های عمومی
+   ========================================================= */
+let editingExpenseId = null;
+
+function initExpenseDateSelects(){
+  const daySel = document.getElementById('ex_day');
+  const monthSel = document.getElementById('ex_month');
+  const yearSel = document.getElementById('ex_year');
+  daySel.innerHTML = Array.from({length:31}, (_,i)=>i+1).map(d=>`<option value="${d}">${toPersianDigits(d)}</option>`).join('');
+  monthSel.innerHTML = PERSIAN_MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+  const cur = todayJalali();
+  const years = [];
+  for(let y = cur.jy - 1; y <= cur.jy + 2; y++) years.push(y);
+  yearSel.innerHTML = years.map(y=>`<option value="${y}">${toPersianDigits(y)}</option>`).join('');
+  daySel.value = cur.jd; monthSel.value = cur.jm; yearSel.value = cur.jy;
+}
+
+function resetExpenseForm(){
+  editingExpenseId = null;
+  document.getElementById('expenseForm').reset();
+  document.getElementById('expenseFormTitle').textContent = 'ثبت هزینه عمومی';
+  document.getElementById('cancelExpenseEditBtn').classList.add('hidden');
+  initExpenseDateSelects();
+}
+document.getElementById('cancelExpenseEditBtn').addEventListener('click', resetExpenseForm);
+
+document.getElementById('expenseForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const amount = Number(document.getElementById('ex_amount').value) || 0;
+  if(amount <= 0){ showToast('مبلغ هزینه باید بزرگ‌تر از صفر باشد'); return; }
+  const date = {
+    jy: Number(document.getElementById('ex_year').value),
+    jm: Number(document.getElementById('ex_month').value),
+    jd: Number(document.getElementById('ex_day').value)
+  };
+  const record = {
+    id: editingExpenseId || genId(),
+    date,
+    category: document.getElementById('ex_category').value,
+    amount,
+    description: document.getElementById('ex_description').value.trim(),
+    createdAt: editingExpenseId ? (appData.expenses.find(x=>x.id===editingExpenseId)?.createdAt || Date.now()) : Date.now()
+  };
+  if(editingExpenseId){
+    appData.expenses = appData.expenses.map(x=> x.id===editingExpenseId ? record : x);
+  } else {
+    appData.expenses.push(record);
+  }
+  saveData();
+  resetExpenseForm();
+  renderExpenses();
+  populateYearSelect();
+  renderDashboard();
+  showToast('هزینه ذخیره شد');
+});
+
+function renderExpenses(){
+  const wrap = document.getElementById('expensesList');
+  const q = (document.getElementById('expenseSearch').value||'').trim().toLowerCase();
+  const cat = document.getElementById('expenseCategoryFilter').value;
+  const min = Number(document.getElementById('ef_min').value) || 0;
+  const max = Number(document.getElementById('ef_max').value) || 0;
+  const from = document.getElementById('ef_from').value;
+  const to = document.getElementById('ef_to').value;
+  let list = [...appData.expenses];
+  if(cat) list = list.filter(ex=>ex.category===cat);
+  if(q) list = list.filter(ex=>(ex.description||'').toLowerCase().includes(q));
+  if(min) list = list.filter(ex=>Number(ex.amount)>=min);
+  if(max) list = list.filter(ex=>Number(ex.amount)<=max);
+  if(from || to) list = list.filter(ex=>inDateRange(ex.date, from, to));
+  list.sort((a,b)=> b.createdAt - a.createdAt);
+  window.__lastExpensesList = list;
+
+  if(list.length === 0){ wrap.innerHTML = '<p class="empty">هزینه‌ای یافت نشد.</p>'; return; }
+  wrap.innerHTML = list.map(ex=>`
+    <div class="list-item">
+      <div class="li-title">${escapeHtml(ex.category)} — ${jalaliStr(ex.date)}</div>
+      <div class="li-sub">مبلغ: ${formatNumber(ex.amount)} تومان ${ex.description ? '— '+escapeHtml(ex.description) : ''}</div>
+      <div class="li-actions">
+        <button class="btn btn-sm btn-outline" onclick="editExpense('${ex.id}')">ویرایش</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteExpense('${ex.id}')">حذف</button>
+      </div>
+    </div>`).join('');
+}
+document.getElementById('expenseSearch').addEventListener('input', renderExpenses);
+document.getElementById('expenseCategoryFilter').addEventListener('change', renderExpenses);
+
+function editExpense(id){
+  const ex = appData.expenses.find(x=>x.id===id);
+  if(!ex) return;
+  editingExpenseId = id;
+  document.getElementById('expenseFormTitle').textContent = 'ویرایش هزینه';
+  document.getElementById('cancelExpenseEditBtn').classList.remove('hidden');
+  initExpenseDateSelects();
+  document.getElementById('ex_year').value = ex.date.jy;
+  document.getElementById('ex_month').value = ex.date.jm;
+  document.getElementById('ex_day').value = ex.date.jd;
+  document.getElementById('ex_category').value = ex.category;
+  document.getElementById('ex_amount').value = ex.amount;
+  document.getElementById('ex_description').value = ex.description || '';
+  switchPage('expenses');
+}
+
+function deleteExpense(id){
+  const ex = appData.expenses.find(x=>x.id===id);
+  if(!ex) return;
+  if(!confirm('هزینه «'+ex.category+' - '+formatNumber(ex.amount)+' تومان» حذف شود؟')) return;
+  appData.expenses = appData.expenses.filter(x=>x.id!==id);
+  if(editingExpenseId === id) resetExpenseForm();
+  saveData();
+  renderExpenses();
+  renderDashboard();
+  showToast('هزینه حذف شد');
+}
+
+/* =========================================================
+   ۱۶) زیرتب‌های گزارش‌ها
+   ========================================================= */
+function switchReportTab(name){
+  document.querySelectorAll('#reportSubnav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.report-tab').forEach(t=>t.classList.toggle('active', t.id==='rep-'+name));
+}
+document.getElementById('reportSubnav').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-tab]');
+  if(!btn) return;
+  switchReportTab(btn.dataset.tab);
+});
+
+function refreshAllReports(){
+  renderAnnualReport();
+  renderCompareReport();
+  renderCustomerReport();
+  renderSupplierReport();
+  renderProductReport();
+  renderOrderReport();
+}
+
+/* ---- گزارش سالانه ---- */
+function populateAnnualReportYearSelect(){
+  const sel = document.getElementById('rep_annual_year');
+  const cur = sel.value;
+  const years = getAllRecordYears();
+  const curYear = todayJalali().jy;
+  if(!years.includes(curYear)) years.unshift(curYear);
+  years.sort((a,b)=>b-a);
+  sel.innerHTML = years.map(y=>`<option value="${y}">${toPersianDigits(y)}</option>`).join('');
+  if(years.includes(Number(cur))) sel.value = cur; else sel.value = years[0];
+}
+document.getElementById('rep_annual_year').addEventListener('change', renderAnnualReport);
+
+function renderAnnualReport(){
+  populateAnnualReportYearSelect();
+  const year = Number(document.getElementById('rep_annual_year').value);
+  const rows = PERSIAN_MONTHS.map((name,i)=>{
+    const m = i+1;
+    const a = computeAggregates(d => d.jy===year && d.jm===m);
+    return { name, ...a };
+  });
+  const totalAgg = computeAggregates(d => d.jy === year);
+
+  const fmt = n => formatNumber(n);
+  const table = document.getElementById('annualReportTable');
+  table.innerHTML = `
+    <thead><tr>
+      <th>ماه</th><th>فروش</th><th>خرید</th><th>هزینه مستقیم</th><th>هزینه عمومی</th>
+      <th>بهای تمام‌شده</th><th>سود ناخالص</th><th>سود خالص</th>
+    </tr></thead>
+    <tbody>
+      ${rows.map(r=>`<tr>
+        <td>${r.name}</td><td>${fmt(r.sales)}</td><td>${fmt(r.purchases)}</td><td>${fmt(r.directCost)}</td>
+        <td>${fmt(r.generalExpense)}</td><td>${fmt(r.cogs)}</td><td>${fmt(r.grossProfit)}</td><td>${fmt(r.netProfit)}</td>
+      </tr>`).join('')}
+    </tbody>
+    <tfoot><tr>
+      <td>جمع سال</td><td>${fmt(totalAgg.sales)}</td><td>${fmt(totalAgg.purchases)}</td><td>${fmt(totalAgg.directCost)}</td>
+      <td>${fmt(totalAgg.generalExpense)}</td><td>${fmt(totalAgg.cogs)}</td><td>${fmt(totalAgg.grossProfit)}</td><td>${fmt(totalAgg.netProfit)}</td>
+    </tr></tfoot>
+  `;
+}
+
+/* ---- مقایسه سال‌ها ---- */
+function renderCompareReport(){
+  const years = getAllRecordYears();
+  const table = document.getElementById('compareReportTable');
+  if(years.length === 0){
+    table.innerHTML = '<tbody><tr><td>اطلاعاتی برای مقایسه وجود ندارد.</td></tr></tbody>';
+    return;
+  }
+  const fmt = n => formatNumber(n);
+  const rows = years.map(y=>{
+    const a = computeAggregates(d => d.jy === y);
+    return `<tr>
+      <td>${toPersianDigits(y)}</td><td>${fmt(a.sales)}</td><td>${fmt(a.purchases)}</td>
+      <td>${fmt(a.generalExpense)}</td><td>${fmt(a.grossProfit)}</td><td>${fmt(a.netProfit)}</td>
+    </tr>`;
+  }).join('');
+  table.innerHTML = `
+    <thead><tr><th>سال</th><th>فروش</th><th>خرید</th><th>هزینه</th><th>سود ناخالص</th><th>سود خالص</th></tr></thead>
+    <tbody>${rows}</tbody>
+  `;
+}
+
+/* ---- گزارش مشتریان + تحلیل ساده وفاداری ---- */
+function computeLoyalty(stats){
+  if(stats.count === 0) return { label:'غیرفعال', cls:'loyalty-badge-inactive', score:0 };
+  const today = todayJalali();
+  const todayApprox = today.jy*365 + today.jm*30 + today.jd;
+  const lastApprox = stats.last.jy*365 + stats.last.jm*30 + stats.last.jd;
+  const daysAgo = Math.max(0, todayApprox - lastApprox);
+
+  const countScore = Math.min(stats.count, 10) * 2;         // حداکثر ۲۰
+  const amountScore = Math.min(stats.total/1000000, 10) * 2; // هر ۱ میلیون تومان ۲ امتیاز، حداکثر ۲۰
+  let recencyScore;
+  if(daysAgo <= 30) recencyScore = 15;
+  else if(daysAgo <= 90) recencyScore = 9;
+  else if(daysAgo <= 180) recencyScore = 4;
+  else recencyScore = 0;
+
+  const score = countScore + amountScore + recencyScore; // حداکثر ۵۵
+
+  let label, cls;
+  if(score >= 35){ label='مشتری ویژه'; cls='loyalty-badge-VIP'; }
+  else if(score >= 24){ label='وفادار'; cls='loyalty-badge-loyal'; }
+  else if(score >= 14){ label='فعال'; cls='loyalty-badge-active'; }
+  else if(daysAgo > 180){ label='غیرفعال'; cls='loyalty-badge-inactive'; }
+  else { label='کم‌فعالیت'; cls='loyalty-badge-low'; }
+
+  return { label, cls, score: Math.round(score) };
+}
+
+function renderCustomerReport(){
+  const wrap = document.getElementById('customerReportList');
+  if(appData.customers.length === 0){
+    wrap.innerHTML = '<p class="empty">مشتری‌ای ثبت نشده است.</p>';
+    return;
+  }
+  const loyaltyFilter = document.getElementById('cr_loyaltyFilter').value;
+  let rows = appData.customers.map(c=>{
+    const stats = getCustomerStats(c.id);
+    const loyalty = computeLoyalty(stats);
+    return { c, stats, loyalty };
+  });
+  if(loyaltyFilter) rows = rows.filter(r=>r.loyalty.label===loyaltyFilter);
+  window.__lastCustomerReportList = rows;
+  if(rows.length === 0){ wrap.innerHTML = '<p class="empty">مشتری‌ای در این دسته یافت نشد.</p>'; return; }
+  wrap.innerHTML = rows.map(({c,stats,loyalty})=>{
+    const discountTotal = stats.sales.reduce((a,s)=>a + (Number(s.discountTotal)||0), 0);
+    const profitTotal = stats.sales.reduce((a,s)=>a + (Number(s.grossProfit)||0), 0);
+    return `
+    <div class="list-item">
+      <div class="row-between">
+        <div class="li-title">${escapeHtml(c.name)}</div>
+        <span class="badge ${loyalty.cls}">${loyalty.label}</span>
+      </div>
+      <div class="li-sub">${escapeHtml(c.phone||'—')}</div>
+      <div class="li-sub">
+        تعداد خرید: ${stats.count ? formatNumber(stats.count) : 'بدون خرید'} &nbsp;|&nbsp;
+        مجموع خرید: ${formatNumber(stats.total)} تومان &nbsp;|&nbsp;
+        میانگین: ${formatNumber(Math.round(stats.avg||0))} تومان
+      </div>
+      <div class="li-sub">
+        اولین خرید: ${stats.first?jalaliStr(stats.first):'—'} &nbsp;|&nbsp;
+        آخرین خرید: ${stats.last?jalaliStr(stats.last):'—'} &nbsp;|&nbsp;
+        مجموع تخفیف: ${formatNumber(discountTotal)} تومان &nbsp;|&nbsp;
+        سود حاصل از مشتری: ${formatNumber(profitTotal)} تومان
+      </div>
+      <div class="li-actions">
+        <button class="btn btn-sm" onclick="switchPage('customers'); viewCustomerDetail('${c.id}');">مشاهده جزئیات</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---- گزارش تأمین‌کنندگان ---- */
+function renderSupplierReport(){
+  const wrap = document.getElementById('supplierReportList');
+  if(appData.suppliers.length === 0){
+    wrap.innerHTML = '<p class="empty">تأمین‌کننده‌ای ثبت نشده است.</p>';
+    return;
+  }
+  wrap.innerHTML = appData.suppliers.map(sup=>{
+    const purchases = appData.purchases.filter(p=>p.supplierId===sup.id);
+    const count = purchases.length;
+    const total = purchases.reduce((a,p)=>a + (Number(p.grandTotal)||0), 0);
+    let qty = 0, amount = 0;
+    const productNames = new Set();
+    purchases.forEach(p=>{
+      p.items.forEach(it=>{
+        qty += it.qty; amount += it.amount;
+        const prod = appData.products.find(x=>x.id===it.productId);
+        if(prod) productNames.add(prod.name);
+      });
+    });
+    const avgPrice = qty > 0 ? amount/qty : 0;
+    const lastPurchase = purchases.length
+      ? purchases.reduce((a,b)=> jalaliKey(a.date) > jalaliKey(b.date) ? a : b).date
+      : null;
+    const qualityCounts = {};
+    purchases.forEach(p=>{ if(p.quality){ qualityCounts[p.quality] = (qualityCounts[p.quality]||0)+1; } });
+    const qualityStr = Object.keys(qualityCounts).length
+      ? Object.entries(qualityCounts).map(([k,v])=>`${k} ×${toPersianDigits(v)}`).join('، ')
+      : 'ثبت نشده';
+
+    return `
+    <div class="list-item">
+      <div class="li-title">${escapeHtml(sup.name)}</div>
+      <div class="li-sub">${escapeHtml(sup.phone||'—')}</div>
+      <div class="li-sub">
+        تعداد خرید: ${count ? formatNumber(count) : 'بدون خرید'} &nbsp;|&nbsp;
+        مجموع خرید: ${formatNumber(total)} تومان &nbsp;|&nbsp;
+        میانگین قیمت خرید: ${formatNumber(Math.round(avgPrice))} تومان
+      </div>
+      <div class="li-sub">
+        آخرین خرید: ${lastPurchase?jalaliStr(lastPurchase):'—'} &nbsp;|&nbsp;
+        کالاهای خریداری‌شده: ${productNames.size ? [...productNames].join('، ') : '—'}
+      </div>
+      <div class="li-sub">سابقه کیفیت: ${qualityStr}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---- گزارش کالاها ---- */
+function renderProductReport(){
+  const wrap = document.getElementById('productReportList');
+  if(appData.products.length === 0){
+    wrap.innerHTML = '<p class="empty">کالایی ثبت نشده است.</p>';
+    return;
+  }
+  const sortMode = document.getElementById('productReportSort').value;
+
+  const rows = appData.products.map(p=>{
+    let purchaseQty=0, purchaseAmount=0, saleQty=0, saleAmount=0, cogsAmount=0, costAmount=0;
+    appData.purchases.forEach(pu=>{
+      pu.items.forEach(it=>{
+        if(it.productId===p.id){ purchaseQty+=it.qty; purchaseAmount+=it.amount; costAmount += it.totalCost; }
+      });
+    });
+    appData.sales.forEach(s=>{
+      s.items.forEach(it=>{
+        if(it.productId===p.id){ saleQty+=it.qty; saleAmount+=it.amount; cogsAmount += it.qty*it.unitCost; }
+      });
+    });
+    const profit = saleAmount - cogsAmount;
+    const margin = saleAmount > 0 ? (profit/saleAmount*100) : 0;
+    return { p, purchaseQty, purchaseAmount, saleQty, saleAmount, costAmount, cogsAmount, profit, margin };
+  });
+
+  const sorters = {
+    sales: (a,b)=> b.saleAmount - a.saleAmount,
+    profit: (a,b)=> b.profit - a.profit,
+    stockDesc: (a,b)=> (b.p.stock||0) - (a.p.stock||0),
+    stockAsc: (a,b)=> (a.p.stock||0) - (b.p.stock||0)
+  };
+  rows.sort(sorters[sortMode] || sorters.sales);
+  window.__lastProductReportRows = rows;
+
+  wrap.innerHTML = rows.map(r=>`
+    <div class="list-item">
+      <div class="li-title">${escapeHtml(r.p.name)}</div>
+      <div class="li-sub">
+        موجودی: ${formatNumber(r.p.stock)} &nbsp;|&nbsp;
+        مقدار خرید: ${formatNumber(r.purchaseQty)} &nbsp;|&nbsp;
+        مقدار فروش: ${formatNumber(r.saleQty)}
+      </div>
+      <div class="li-sub">
+        مبلغ خرید: ${formatNumber(r.purchaseAmount)} &nbsp;|&nbsp;
+        مبلغ فروش: ${formatNumber(r.saleAmount)} &nbsp;|&nbsp;
+        مجموع مبلغ خرید: ${formatNumber(r.costAmount)}
+      </div>
+      <div class="li-sub">
+        بهای تمام‌شده فروش (COGS): ${formatNumber(r.cogsAmount)} &nbsp;|&nbsp;
+        سود: ${formatNumber(r.profit)} تومان &nbsp;|&nbsp;
+        حاشیه سود: ${toPersianDigits(r.margin.toFixed(1))}٪
+      </div>
+      <div class="li-sub">
+        آخرین قیمت خرید: ${formatNumber(r.p.lastPurchasePrice)} &nbsp;|&nbsp;
+        میانگین قیمت خرید: ${formatNumber(Math.round(r.p.avgPurchasePrice||0))}
+      </div>
+    </div>`).join('');
+}
+document.getElementById('productReportSort').addEventListener('change', renderProductReport);
+
+/* ---- گزارش سفارش‌ها ---- */
+function renderOrderReport(){
+  const wrap = document.getElementById('orderReportList');
+  const statusFilter = document.getElementById('orderReportStatusFilter').value;
+  let list = [...appData.orders];
+  if(statusFilter) list = list.filter(o=>o.status===statusFilter);
+  list.sort((a,b)=> b.createdAt - a.createdAt);
+  window.__lastOrderReportList = list;
+
+  if(list.length === 0){ wrap.innerHTML = '<p class="empty">سفارشی یافت نشد.</p>'; return; }
+  const cls = s => ORDER_STATUS_CLASS[s] || 'status-new';
+  wrap.innerHTML = list.map(o=>`
+    <div class="list-item">
+      <div class="li-title">سفارش ${escapeHtml(o.number)} — ${jalaliStr(o.date)}</div>
+      <div class="li-sub">
+        مشتری: ${escapeHtml(o.customer||'—')} &nbsp;|&nbsp;
+        مبلغ: ${formatNumber(o.grandTotal)} تومان &nbsp;|&nbsp;
+        تحویل: ${o.deliveryDate?jalaliStr(o.deliveryDate):'—'}
+      </div>
+      <div style="margin-top:4px;"><span class="badge ${cls(o.status)}">${escapeHtml(o.status)}</span></div>
+    </div>`).join('');
+}
+document.getElementById('orderReportStatusFilter').addEventListener('change', renderOrderReport);
+
+/* ---- جست‌وجوی سراسری ---- */
+function renderGlobalSearch(query){
+  const wrap = document.getElementById('globalSearchResults');
+  query = (query||'').trim().toLowerCase();
+  if(!query){ wrap.innerHTML = ''; return; }
+
+  const results = [];
+  appData.products.forEach(p=>{
+    if((p.name||'').toLowerCase().includes(query) || (p.code||'').toLowerCase().includes(query)){
+      results.push({ type:'کالا', label:p.name, action:()=>switchPage('products') });
+    }
+  });
+  appData.customers.forEach(c=>{
+    if((c.name||'').toLowerCase().includes(query) || (c.phone||'').toLowerCase().includes(query)){
+      results.push({ type:'مشتری', label:c.name, action:()=>{ switchPage('customers'); viewCustomerDetail(c.id); } });
+    }
+  });
+  appData.suppliers.forEach(s=>{
+    if((s.name||'').toLowerCase().includes(query) || (s.phone||'').toLowerCase().includes(query)){
+      results.push({ type:'تأمین‌کننده', label:s.name, action:()=>switchPage('suppliers') });
+    }
+  });
+  appData.sales.forEach(s=>{
+    if((s.number||'').toLowerCase().includes(query) || (s.notes||'').toLowerCase().includes(query)){
+      results.push({ type:'فاکتور فروش', label:s.number, action:()=>{ switchPage('sales'); viewInvoice(s.id); } });
+    }
+  });
+  appData.purchases.forEach(p=>{
+    if((p.number||'').toLowerCase().includes(query)){
+      results.push({ type:'خرید', label:p.number, action:()=>switchPage('purchases') });
+    }
+  });
+  appData.orders.forEach(o=>{
+    if((o.number||'').toLowerCase().includes(query) || (o.notes||'').toLowerCase().includes(query)){
+      results.push({ type:'سفارش', label:o.number, action:()=>switchPage('orders') });
+    }
+  });
+  appData.expenses.forEach(ex=>{
+    if((ex.description||'').toLowerCase().includes(query)){
+      results.push({ type:'هزینه', label:ex.category+' - '+formatNumber(ex.amount), action:()=>switchPage('expenses') });
+    }
+  });
+
+  if(results.length === 0){ wrap.innerHTML = '<p class="empty">نتیجه‌ای یافت نشد.</p>'; return; }
+
+  window.__searchResults = results;
+  wrap.innerHTML = results.map((r,i)=>`
+    <div class="list-item">
+      <div class="li-sub">${escapeHtml(r.type)}</div>
+      <div class="li-title">${escapeHtml(r.label)}</div>
+      <div class="li-actions"><button class="btn btn-sm btn-outline" onclick="window.__searchResults[${i}].action()">رفتن به بخش</button></div>
+    </div>`).join('');
+}
+document.getElementById('globalSearchInput').addEventListener('input', (e)=>renderGlobalSearch(e.target.value));
+
+/* =========================================================
+   ۱۷) ابزار عمومی خروجی فایل / CSV (مرحله ۶)
+   ========================================================= */
+function downloadFile(filename, content, mime){
+  const blob = new Blob([content], { type: mime || 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+}
+
+function exportCSV(filename, headers, rows){
+  const esc = v => {
+    v = (v===null||v===undefined) ? '' : String(v);
+    if(/[",\n]/.test(v)) v = '"' + v.replace(/"/g,'""') + '"';
+    return v;
+  };
+  const csv = '\uFEFF' + [headers, ...rows].map(r=>r.map(esc).join(',')).join('\r\n');
+  downloadFile(filename, csv, 'text/csv;charset=utf-8;');
+  showToast('فایل CSV دانلود شد');
+}
+
+function backupFilename(prefix, ext){
+  const d = todayJalali();
+  return `${prefix}-${d.jy}-${String(d.jm).padStart(2,'0')}-${String(d.jd).padStart(2,'0')}.${ext||'json'}`;
+}
+
+/* =========================================================
+   ۱۸) پشتیبان‌گیری و بازیابی (مرحله ۶)
+   ========================================================= */
+function exportBackup(){
+  downloadFile(backupFilename('backup'), JSON.stringify(appData, null, 2), 'application/json;charset=utf-8;');
+  showToast('فایل پشتیبان دانلود شد');
+}
+
+function validateBackupStructure(obj){
+  if(!obj || typeof obj !== 'object') return false;
+  const requiredArrays = ['products','suppliers','customers','purchases','sales','orders','expenses'];
+  return requiredArrays.every(k => Array.isArray(obj[k]));
+}
+
+function restoreFromFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    let parsed;
+    try{ parsed = JSON.parse(e.target.result); }
+    catch(err){ alert('فایل پشتیبان معتبر نیست؛ اطلاعات فعلی تغییر نکرد.'); return; }
+    if(!validateBackupStructure(parsed)){ alert('فایل پشتیبان معتبر نیست؛ اطلاعات فعلی تغییر نکرد.'); return; }
+    if(!confirm('با بازیابی پشتیبان، اطلاعات فعلی جایگزین اطلاعات موجود در فایل پشتیبان می‌شود. آیا ادامه می‌دهید؟')) return;
+    try{ downloadFile(backupFilename('before-restore-backup'), JSON.stringify(appData, null, 2), 'application/json;charset=utf-8;'); }catch(err){}
+    appData = Object.assign(structuredClone(DEFAULT_DATA), parsed);
+    saveData();
+    alert('بازیابی با موفقیت انجام شد. برنامه بارگذاری مجدد می‌شود.');
+    location.reload();
+  };
+  reader.onerror = ()=>{ alert('فایل پشتیبان معتبر نیست؛ اطلاعات فعلی تغییر نکرد.'); };
+  reader.readAsText(file, 'UTF-8');
+}
+
+document.getElementById('backupBtn').addEventListener('click', exportBackup);
+document.getElementById('restoreBtn').addEventListener('click', ()=>{
+  const f = document.getElementById('restoreFileInput').files[0];
+  if(!f){ showToast('ابتدا یک فایل پشتیبان انتخاب کنید'); return; }
+  restoreFromFile(f);
+});
+
+/* =========================================================
+   ۱۹) فیلترهای پیشرفته (مرحله ۶)
+   ========================================================= */
+function parseJalaliInput(str){
+  if(!str) return null;
+  const parts = String(str).trim().split(/[\/\-]/).map(Number);
+  if(parts.length !== 3 || parts.some(isNaN)) return null;
+  return { jy: parts[0], jm: parts[1], jd: parts[2] };
+}
+function inDateRange(d, fromStr, toStr){
+  if(!d) return false;
+  const from = parseJalaliInput(fromStr);
+  const to = parseJalaliInput(toStr);
+  const k = jalaliKey(d);
+  if(from && k < jalaliKey(from)) return false;
+  if(to && k > jalaliKey(to)) return false;
+  return true;
+}
+
+['pf_supplier','pf_min','pf_max','pf_from','pf_to'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('input', renderPurchases);
+  el.addEventListener('change', renderPurchases);
+});
+document.getElementById('pf_reset').addEventListener('click', ()=>{
+  ['pf_supplier','pf_min','pf_max','pf_from','pf_to'].forEach(id=>{ document.getElementById(id).value=''; });
+  renderPurchases();
+});
+document.getElementById('purchasesCsvBtn').addEventListener('click', ()=>{
+  const list = window.__lastPurchasesList || appData.purchases;
+  const rows = list.map(p=>{
+    const sup = appData.suppliers.find(s=>s.id===p.supplierId);
+    return [p.number, jalaliStr(p.date), sup?sup.name:'', p.items.length, p.itemsTotal, p.directCostTotal, p.grandTotal];
+  });
+  exportCSV(backupFilename('purchases', 'csv'),
+    ['شماره خرید','تاریخ','تأمین‌کننده','تعداد قلم','جمع اقلام','هزینه مستقیم','مبلغ کل'], rows);
+});
+
+['sf_customer','sf_min','sf_max','sf_from','sf_to'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('input', renderSales);
+  el.addEventListener('change', renderSales);
+});
+document.getElementById('sf_reset').addEventListener('click', ()=>{
+  ['sf_customer','sf_min','sf_max','sf_from','sf_to'].forEach(id=>{ document.getElementById(id).value=''; });
+  renderSales();
+});
+document.getElementById('salesCsvBtn').addEventListener('click', ()=>{
+  const list = window.__lastSalesList || appData.sales;
+  const rows = list.map(s=>[s.number, jalaliStr(s.date), s.customer||'', s.netSales, s.discountTotal||0, s.cogs, s.grossProfit]);
+  exportCSV(backupFilename('sales', 'csv'),
+    ['شماره فاکتور','تاریخ','مشتری','فروش خالص','تخفیف','بهای تمام‌شده','سود ناخالص'], rows);
+});
+
+['of_status','of_customer','of_min','of_max'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('input', renderOrders);
+  el.addEventListener('change', renderOrders);
+});
+document.getElementById('of_reset').addEventListener('click', ()=>{
+  ['of_status','of_customer','of_min','of_max'].forEach(id=>{ document.getElementById(id).value=''; });
+  renderOrders();
+});
+document.getElementById('ordersCsvBtn').addEventListener('click', ()=>{
+  const list = window.__lastOrdersList || appData.orders;
+  const rows = list.map(o=>[o.number, jalaliStr(o.date), o.customer||'', o.grandTotal, o.status, o.deliveryDate?jalaliStr(o.deliveryDate):'']);
+  exportCSV(backupFilename('orders', 'csv'),
+    ['شماره سفارش','تاریخ','مشتری','مبلغ کل','وضعیت','تاریخ تحویل'], rows);
+});
+
+['pr_stockFilter','pr_priceMin','pr_priceMax'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('input', ()=>renderProducts(document.getElementById('productSearch').value));
+  el.addEventListener('change', ()=>renderProducts(document.getElementById('productSearch').value));
+});
+document.getElementById('pr_filterReset').addEventListener('click', ()=>{
+  ['pr_stockFilter','pr_priceMin','pr_priceMax'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('productSearch').value='';
+  renderProducts();
+});
+document.getElementById('productsCsvBtn').addEventListener('click', ()=>{
+  const list = window.__lastProductsList || appData.products;
+  const rows = list.map(p=>[p.name, p.code||'', p.stock, p.unit||'', p.purchasePrice, p.salePrice]);
+  exportCSV(backupFilename('products', 'csv'),
+    ['نام کالا','کد کالا','موجودی','واحد','قیمت خرید','قیمت فروش'], rows);
+});
+
+['ef_min','ef_max','ef_from','ef_to'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('input', renderExpenses);
+  el.addEventListener('change', renderExpenses);
+});
+document.getElementById('ef_reset').addEventListener('click', ()=>{
+  ['ef_min','ef_max','ef_from','ef_to'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('expenseSearch').value='';
+  document.getElementById('expenseCategoryFilter').value='';
+  renderExpenses();
+});
+document.getElementById('expensesCsvBtn').addEventListener('click', ()=>{
+  const list = window.__lastExpensesList || appData.expenses;
+  const rows = list.map(ex=>[ex.category, jalaliStr(ex.date), ex.amount, ex.description||'']);
+  exportCSV(backupFilename('expenses', 'csv'),
+    ['نوع هزینه','تاریخ','مبلغ','توضیحات'], rows);
+});
+
+document.getElementById('cr_loyaltyFilter').addEventListener('change', renderCustomerReport);
+document.getElementById('cr_reset').addEventListener('click', ()=>{
+  document.getElementById('cr_loyaltyFilter').value='';
+  renderCustomerReport();
+});
+document.getElementById('customersCsvBtn').addEventListener('click', ()=>{
+  const list = window.__lastCustomerReportList || [];
+  const rows = list.map(r=>[r.c.name, r.c.phone||'', r.stats.count, r.stats.total, Math.round(r.stats.avg||0), r.loyalty.label]);
+  exportCSV(backupFilename('customers', 'csv'),
+    ['نام مشتری','تلفن','تعداد خرید','مجموع خرید','میانگین خرید','دسته وفاداری'], rows);
+});
+
+document.getElementById('suppliersCsvBtn').addEventListener('click', ()=>{
+  const rows = appData.suppliers.map(sup=>{
+    const purchases = appData.purchases.filter(p=>p.supplierId===sup.id);
+    const total = purchases.reduce((a,p)=>a + (Number(p.grandTotal)||0), 0);
+    return [sup.name, sup.phone||'', purchases.length, total];
+  });
+  exportCSV(backupFilename('suppliers', 'csv'),
+    ['نام تأمین‌کننده','تلفن','تعداد خرید','مجموع خرید'], rows);
+});
+
+document.getElementById('productReportCsvBtn').addEventListener('click', ()=>{
+  const list = window.__lastProductReportRows || [];
+  const rows = list.map(r=>[r.p.name, r.p.stock, r.purchaseQty, r.saleQty, r.purchaseAmount, r.saleAmount, r.profit]);
+  exportCSV(backupFilename('product-report', 'csv'),
+    ['نام کالا','موجودی','مقدار خرید','مقدار فروش','مبلغ خرید','مبلغ فروش','سود'], rows);
+});
+
+document.getElementById('orderReportCsvBtn').addEventListener('click', ()=>{
+  const list = window.__lastOrderReportList || appData.orders;
+  const rows = list.map(o=>[o.number, jalaliStr(o.date), o.customer||'', o.grandTotal, o.status]);
+  exportCSV(backupFilename('order-report', 'csv'),
+    ['شماره سفارش','تاریخ','مشتری','مبلغ کل','وضعیت'], rows);
+});
+
+/* =========================================================
+   شروع برنامه
+   ========================================================= */
+populateYearSelect();
+populateMonthSelect();
+loadSettingsForm();
+renderDashboard();
+renderProducts();
+renderSuppliers();
+refreshSupplierSelect();
+initDateSelects();
+addLineItemRow();
+renderPurchases();
+renderCustomers();
+refreshCustomerSelects();
+setupCustomerQuickAdd('s_customer','s_customerQuickAdd','s_customerQuickName','s_customerQuickPhone','s_customerQuickAddBtn');
+setupCustomerQuickAdd('o_customer','o_customerQuickAdd','o_customerQuickName','o_customerQuickPhone','o_customerQuickAddBtn');
+renderSales();
+initSaleDateSelects();
+addSaleLineItemRow();
+renderOrders();
+initOrderDateSelects();
+addOrderLineItemRow();
+renderExpenses();
+initExpenseDateSelects();
+refreshAllReports();
+renderDashboard();
+</script>
+
+</body>
+</html>
