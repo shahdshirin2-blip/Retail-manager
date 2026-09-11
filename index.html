@@ -297,7 +297,7 @@
       <form id="saleForm" class="settings">
         <input type="hidden" id="s_id">
         <label>شماره فاکتور</label>
-        <input type="text" id="s_number">
+        <input type="text" id="s_number" readonly dir="ltr" style="text-align:right;" placeholder="به‌صورت خودکار پس از ثبت تعیین می‌شود">
 
         <label>تاریخ فروش (شمسی)</label>
         <div class="date-grid">
@@ -808,7 +808,8 @@ const DEFAULT_DATA = {
   directCosts: [],
   sales: [],
   orders: [],
-  expenses: []
+  expenses: [],
+  saleInvoiceSeq: {}
 };
 
 function loadData(){
@@ -866,6 +867,29 @@ function todayJalali(){
 function toPersianDigits(str){
   const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
   return String(str).replace(/[0-9]/g, d => fa[d]);
+}
+
+function faDigitsToEn(str){
+  const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  return String(str).replace(/[۰-۹]/g, d => String(fa.indexOf(d)));
+}
+
+// تولید خودکار و یکتای شماره فاکتور فروش به‌ازای هر سال شمسی (سال-سریال سه‌رقمی)
+// appData.saleInvoiceSeq آخرین سریال اختصاص‌یافته هر سال را نگه می‌دارد تا حذف/ویرایش فروش‌ها هرگز باعث تکرار شماره نشود
+function nextSaleInvoiceNumber(jy){
+  appData.saleInvoiceSeq = appData.saleInvoiceSeq || {};
+  let maxExisting = 0;
+  appData.sales.forEach(s=>{
+    const m = /^([0-9۰-۹]+)-([0-9۰-۹]{3})$/.exec(s.number || '');
+    if(m && Number(faDigitsToEn(m[1])) === jy){
+      const serial = Number(faDigitsToEn(m[2]));
+      if(serial > maxExisting) maxExisting = serial;
+    }
+  });
+  const current = Math.max(Number(appData.saleInvoiceSeq[jy]) || 0, maxExisting);
+  const next = current + 1;
+  appData.saleInvoiceSeq[jy] = next;
+  return toPersianDigits(String(jy)) + '-' + toPersianDigits(String(next).padStart(3,'0'));
 }
 
 function formatNumber(n){
@@ -1096,7 +1120,7 @@ function drillDown(kind){
     title = kind === 'sales' ? 'فروش‌های این دوره' : (kind === 'grossProfit' ? 'سود ناخالص هر فاکتور' : 'سود خالص (بر اساس فاکتور فروش)');
     rowsHtml = list.length === 0 ? '<p class="empty">موردی یافت نشد.</p>' : list.map(s=>`
       <div class="hist-item">
-        <div class="row-between"><b>فاکتور ${escapeHtml(s.number)}</b><span>${jalaliStr(s.date)}</span></div>
+        <div class="row-between"><b>فاکتور <bdi dir="ltr">${escapeHtml(s.number)}</bdi></b><span>${jalaliStr(s.date)}</span></div>
         <div>مشتری: ${escapeHtml(s.customer||'—')} — مبلغ: ${formatNumber(s.netSales)} تومان — سود ناخالص: ${formatNumber(s.grossProfit)} تومان</div>
         <div style="margin-top:6px;"><button class="btn btn-sm btn-outline" onclick="viewInvoiceFromCustomer('${s.id}')">مشاهده فاکتور</button></div>
       </div>`).join('');
@@ -1584,7 +1608,7 @@ function viewCustomerDetail(id){
         return `
         <div class="hist-item">
           <div class="row-between">
-            <b>فاکتور ${escapeHtml(s.number)}</b>
+            <b>فاکتور <bdi dir="ltr">${escapeHtml(s.number)}</bdi></b>
             <span>${jalaliStr(s.date)}</span>
           </div>
           <div>مبلغ: ${formatNumber(s.netSales)} تومان &nbsp;|&nbsp; سود ناخالص: ${formatNumber(s.grossProfit)} تومان</div>
@@ -1623,11 +1647,12 @@ function viewInvoiceFromCustomer(saleId){
 }
 
 /* ---- انتخاب مشتری + ثبت سریع (مشترک بین فرم فروش و سفارش) ---- */
-function buildCustomerOptionsHtml(selectedId){
+function buildCustomerOptionsHtml(selectedId, showPhone){
+  if(showPhone === undefined) showPhone = true;
   let html = '<option value="">— بدون مشتری —</option>';
   appData.customers.forEach(c=>{
     const sel = c.id === selectedId ? 'selected' : '';
-    html += `<option value="${c.id}" ${sel}>${escapeHtml(c.name)}${c.phone ? ' - '+escapeHtml(c.phone) : ''}</option>`;
+    html += `<option value="${c.id}" ${sel}>${escapeHtml(c.name)}${(showPhone && c.phone) ? ' - '+escapeHtml(c.phone) : ''}</option>`;
   });
   html += '<option value="__new__">+ مشتری جدید...</option>';
   return html;
@@ -1638,7 +1663,7 @@ function refreshCustomerSelects(){
     const sel = document.getElementById(id);
     if(!sel) return;
     const cur = sel.value;
-    sel.innerHTML = buildCustomerOptionsHtml(null);
+    sel.innerHTML = buildCustomerOptionsHtml(null, id !== 'o_customer');
     if([...sel.options].some(o=>o.value===cur)) sel.value = cur;
   });
   ['sf_customer','of_customer'].forEach(id=>{
@@ -2059,10 +2084,6 @@ document.getElementById('saleForm').addEventListener('submit', (e)=>{
     }
   }
 
-  const number = document.getElementById('s_number').value.trim() || ('ف-' + (appData.sales.length + 1));
-  const dup = appData.sales.find(s => s.number === number && s.id !== editingSaleId);
-  if(dup){ showToast('این شماره فاکتور قبلاً استفاده شده است'); return; }
-
   const date = {
     jy: Number(document.getElementById('s_year').value),
     jm: Number(document.getElementById('s_month').value),
@@ -2131,6 +2152,11 @@ document.getElementById('saleForm').addEventListener('submit', (e)=>{
     if(c){ customerId = c.id; customerName = c.name; }
   }
 
+  // شماره فاکتور: در ویرایش، شماره قبلی حفظ می‌شود؛ در ثبت جدید، به‌صورت خودکار و یکتا تولید می‌شود
+  const number = editingSaleId
+    ? ((appData.sales.find(s=>s.id===editingSaleId) || {}).number || nextSaleInvoiceNumber(date.jy))
+    : nextSaleInvoiceNumber(date.jy);
+
   const saleRecord = {
     id: editingSaleId || genId(),
     number, date,
@@ -2186,7 +2212,7 @@ function renderSales(){
     const dateStr = `${toPersianDigits(s.date.jy)}/${toPersianDigits(s.date.jm)}/${toPersianDigits(s.date.jd)}`;
     return `
     <div class="list-item">
-      <div class="li-title">فاکتور ${escapeHtml(s.number)} — ${dateStr}</div>
+      <div class="li-title">فاکتور <bdi dir="ltr">${escapeHtml(s.number)}</bdi> — ${dateStr}</div>
       <div class="li-sub">
         مشتری: ${escapeHtml(s.customer || '—')} &nbsp;|&nbsp;
         مبلغ نهایی: ${formatNumber(s.netSales)} تومان &nbsp;|&nbsp;
@@ -2206,7 +2232,7 @@ function editSale(id){
   const s = appData.sales.find(x=>x.id===id);
   if(!s) return;
   editingSaleId = id;
-  document.getElementById('saleFormTitle').textContent = 'ویرایش فروش: ' + s.number;
+  document.getElementById('saleFormTitle').innerHTML = 'ویرایش فروش: <bdi dir="ltr">' + escapeHtml(s.number) + '</bdi>';
   document.getElementById('cancelSaleEditBtn').classList.remove('hidden');
   document.getElementById('s_number').value = s.number;
   document.getElementById('s_notes').value = s.notes || '';
@@ -2286,10 +2312,10 @@ function buildInvoiceHtml(s){
   }).join('');
 
   return `
-    <h3>${escapeHtml(biz.bizName || 'کسب‌وکار')}</h3>
+    <h3>فاکتور فروش</h3>
     <div class="inv-meta">
-      <span>${escapeHtml(biz.phone||'')} ${biz.address ? '— '+escapeHtml(biz.address) : ''}</span>
-      <span>فاکتور ${escapeHtml(s.number)} — ${dateStr}</span>
+      <span>${escapeHtml(biz.bizName||'')}${biz.phone ? ' — '+escapeHtml(biz.phone) : ''} ${biz.address ? '— '+escapeHtml(biz.address) : ''}</span>
+      <span>فاکتور <bdi dir="ltr">${escapeHtml(s.number)}</bdi> — ${dateStr}</span>
     </div>
     <div>مشتری: ${escapeHtml(s.customer || '—')}</div>
     <table>
