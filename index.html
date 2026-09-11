@@ -127,9 +127,17 @@
   .invoice-brand{text-align:center;}
   .invoice-brand img{width:30mm;max-width:90px;height:auto;display:block;margin:0 auto 4px;}
   .invoice-brand span{font-size:10px;color:var(--muted);}
+  .invoice-bank{margin-top:10px;padding:10px;border:1px dashed var(--border);border-radius:8px;background:#f8fafc;}
+  .bank-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:4px 0;font-size:13px;}
+  .bank-label{color:var(--muted);flex:0 0 auto;}
+  .bank-value{font-weight:bold;letter-spacing:0.6px;font-size:14px;user-select:text;}
+  .bank-copy-btn{margin-inline-start:auto;padding:3px 10px;font-size:11px;}
+  .print-only{display:none;}
   #invoicePrintArea{display:none;}
   @media print{
     body > header, body > nav, body > main, #toast{ display:none !important; }
+    .no-print{ display:none !important; }
+    .print-only{ display:block !important; }
     #invoicePrintArea{
       display:block !important;position:fixed;top:0;right:0;left:0;background:#fff;padding:16px;
     }
@@ -765,6 +773,25 @@
         <input type="text" id="set_address" placeholder="آدرس فروشگاه">
         <label>واحد پول</label>
         <input type="text" id="set_currency" value="تومان">
+
+        <h3 style="margin:16px 0 4px;">اطلاعات بانکی فروشنده (برای نمایش در فاکتور)</h3>
+        <label>نام بانک</label>
+        <input type="text" id="set_bankName" placeholder="مثلاً بانک ملت">
+        <label>شماره کارت</label>
+        <input type="text" id="set_bankCard" placeholder="۰۰۰۰-۰۰۰۰-۰۰۰۰-۰۰۰۰" dir="ltr">
+        <label>شماره حساب</label>
+        <input type="text" id="set_bankAccount" placeholder="شماره حساب" dir="ltr">
+        <label>شماره شبا</label>
+        <input type="text" id="set_bankIban" placeholder="IRxxxxxxxxxxxxxxxxxxxxxxxx" dir="ltr">
+
+        <h3 style="margin:16px 0 4px;">مالیات بر ارزش افزوده</h3>
+        <label style="display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="set_vatEnabled" style="width:auto;">
+          فعال‌سازی مالیات بر ارزش افزوده در فاکتور فروش
+        </label>
+        <label>نرخ مالیات (درصد)</label>
+        <input type="number" id="set_vatRate" value="9" min="0" step="0.1">
+
         <button type="submit" class="btn">ذخیره تنظیمات</button>
       </form>
     </div>
@@ -800,7 +827,7 @@ const STORAGE_KEY = 'retailAppData_v1';
 const BRAND_LOGO_DATA_URI = 'data:image/jpeg;base64,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';
 
 const DEFAULT_DATA = {
-  settings: { bizName: '', phone: '', address: '', currency: 'تومان' },
+  settings: { bizName: '', phone: '', address: '', currency: 'تومان', bankName: '', bankCard: '', bankAccount: '', bankIban: '', vatEnabled: false, vatRate: 9 },
   products: [],
   suppliers: [],
   customers: [],
@@ -1031,6 +1058,12 @@ function loadSettingsForm(){
   document.getElementById('set_phone').value = s.phone || '';
   document.getElementById('set_address').value = s.address || '';
   document.getElementById('set_currency').value = s.currency || 'تومان';
+  document.getElementById('set_bankName').value = s.bankName || '';
+  document.getElementById('set_bankCard').value = s.bankCard || '';
+  document.getElementById('set_bankAccount').value = s.bankAccount || '';
+  document.getElementById('set_bankIban').value = s.bankIban || '';
+  document.getElementById('set_vatEnabled').checked = !!s.vatEnabled;
+  document.getElementById('set_vatRate').value = (s.vatRate !== undefined ? s.vatRate : 9);
   document.getElementById('bizNameTitle').textContent = s.bizName || 'مدیریت کسب‌وکار';
 }
 
@@ -1040,6 +1073,12 @@ document.getElementById('settingsForm').addEventListener('submit', (e)=>{
   appData.settings.phone = document.getElementById('set_phone').value.trim();
   appData.settings.address = document.getElementById('set_address').value.trim();
   appData.settings.currency = document.getElementById('set_currency').value.trim() || 'تومان';
+  appData.settings.bankName = document.getElementById('set_bankName').value.trim();
+  appData.settings.bankCard = document.getElementById('set_bankCard').value.replace(/\s+/g,'').trim();
+  appData.settings.bankAccount = document.getElementById('set_bankAccount').value.replace(/\s+/g,'').trim();
+  appData.settings.bankIban = document.getElementById('set_bankIban').value.replace(/\s+/g,'').trim();
+  appData.settings.vatEnabled = document.getElementById('set_vatEnabled').checked;
+  appData.settings.vatRate = Number(document.getElementById('set_vatRate').value) || 0;
   saveData();
   document.getElementById('bizNameTitle').textContent = appData.settings.bizName || 'مدیریت کسب‌وکار';
   showToast('تنظیمات ذخیره شد');
@@ -2297,19 +2336,59 @@ function deleteSale(id){
   showToast('فروش حذف شد و موجودی برگشت');
 }
 
+// گروه‌بندی رشته برای نمایش خواناتر (چهار کاراکتر به چهار کاراکتر) — مقدار ذخیره‌شده و مقدار کپی‌شده همیشه خام و بدون فاصله باقی می‌ماند
+function groupChars(raw, size){
+  size = size || 4;
+  const clean = String(raw||'');
+  const out = [];
+  for(let i=0;i<clean.length;i+=size) out.push(clean.slice(i,i+size));
+  return out.join(' ');
+}
+
+// ردیف نمایش یک شماره بانکی همراه با دکمه کپی (مقدار خام در data-copy، مقدار گروه‌بندی‌شده فقط برای نمایش)
+function bankCopyRow(label, raw){
+  if(!raw) return '';
+  return `<div class="bank-row">
+    <span class="bank-label">${escapeHtml(label)}:</span>
+    <bdi dir="ltr" class="bank-value">${escapeHtml(groupChars(raw,4))}</bdi>
+    <button type="button" class="btn btn-sm btn-outline no-print bank-copy-btn" data-copy="${escapeHtml(raw)}">کپی</button>
+  </div>`;
+}
+
 function buildInvoiceHtml(s){
   const dateStr = `${toPersianDigits(s.date.jy)}/${toPersianDigits(s.date.jm)}/${toPersianDigits(s.date.jd)}`;
   const biz = appData.settings || {};
-  const rows = s.items.map(it=>{
+  const rows = s.items.map((it,idx)=>{
     const p = appData.products.find(x=>x.id===it.productId);
     return `<tr>
+      <td>${toPersianDigits(idx+1)}</td>
       <td>${escapeHtml(p ? p.name : '—')}</td>
-      <td>${formatNumber(it.qty)} ${escapeHtml(p ? (p.unit||'') : '')}</td>
+      <td>${formatNumber(it.qty)}</td>
+      <td>${escapeHtml(p ? (p.unit||'—') : '—')}</td>
       <td>${formatNumber(it.unitPrice)}</td>
       <td>${formatNumber(it.discount)}</td>
       <td>${formatNumber(it.amount)}</td>
     </tr>`;
   }).join('');
+
+  // اطلاعات تماس/آدرس خریدار در صورت اتصال به لیست مشتریان (فقط نمایشی؛ در ثبت فروش تغییری ایجاد نمی‌شود)
+  const cust = s.customerId ? appData.customers.find(c=>c.id===s.customerId) : null;
+  const buyerExtra = [];
+  if(cust && cust.phone) buyerExtra.push('تلفن: '+escapeHtml(cust.phone));
+  if(cust && cust.address) buyerExtra.push('آدرس: '+escapeHtml(cust.address));
+
+  // مالیات بر ارزش افزوده: کاملاً نمایشی و جدا از سود؛ روی s.netSales/s.grossProfit ذخیره‌شده تأثیری ندارد
+  const vatEnabled = !!biz.vatEnabled;
+  const vatRate = Number(biz.vatRate) || 0;
+  const vatBase = s.netSales;
+  const vatAmount = vatEnabled ? Math.round(vatBase * vatRate / 100) : 0;
+  const payable = vatEnabled ? (s.netSales + vatAmount) : s.netSales;
+
+  const bankRows = [];
+  if(biz.bankName) bankRows.push(`<div class="bank-row"><span class="bank-label">بانک:</span><span class="bank-value">${escapeHtml(biz.bankName)}</span></div>`);
+  if(biz.bankCard) bankRows.push(bankCopyRow('شماره کارت', biz.bankCard));
+  if(biz.bankAccount) bankRows.push(bankCopyRow('شماره حساب', biz.bankAccount));
+  if(biz.bankIban) bankRows.push(bankCopyRow('شبا', biz.bankIban));
 
   return `
     <h3>فاکتور فروش</h3>
@@ -2318,16 +2397,20 @@ function buildInvoiceHtml(s){
       <span>فاکتور <bdi dir="ltr">${escapeHtml(s.number)}</bdi> — ${dateStr}</span>
     </div>
     <div>مشتری: ${escapeHtml(s.customer || '—')}</div>
+    ${buyerExtra.length ? '<div style="font-size:12px;color:var(--muted);">'+buyerExtra.join(' — ')+'</div>' : ''}
     <table>
-      <thead><tr><th>کالا</th><th>مقدار</th><th>قیمت واحد</th><th>تخفیف</th><th>مبلغ</th></tr></thead>
+      <thead><tr><th>ردیف</th><th>کالا</th><th>تعداد</th><th>واحد</th><th>قیمت واحد</th><th>تخفیف</th><th>مبلغ</th></tr></thead>
       <tbody>${rows}</tbody>
       <tfoot>
-        <tr><td colspan="4">جمع فروش</td><td>${formatNumber(s.subtotal)}</td></tr>
-        <tr><td colspan="4">جمع تخفیف</td><td>${formatNumber(s.discountTotal)}</td></tr>
-        <tr><td colspan="4">مبلغ نهایی</td><td>${formatNumber(s.netSales)}</td></tr>
+        <tr><td colspan="6">جمع مبلغ کالاها</td><td>${formatNumber(s.subtotal)}</td></tr>
+        <tr><td colspan="6">تخفیف کل</td><td>${formatNumber(s.discountTotal)}</td></tr>
+        ${vatEnabled ? `<tr><td colspan="6">مبلغ مشمول مالیات</td><td>${formatNumber(vatBase)}</td></tr>
+        <tr><td colspan="6">مالیات بر ارزش افزوده (${toPersianDigits(vatRate)}%)</td><td>${formatNumber(vatAmount)}</td></tr>` : ''}
+        <tr><td colspan="6">مبلغ نهایی قابل پرداخت</td><td>${formatNumber(payable)}</td></tr>
       </tfoot>
     </table>
     ${s.notes ? '<div style="margin-top:8px;">توضیحات: '+escapeHtml(s.notes)+'</div>' : ''}
+    ${bankRows.length ? '<div class="invoice-bank"><div style="font-weight:bold;margin-bottom:4px;">اطلاعات پرداخت به حساب فروشنده</div>'+bankRows.join('')+'<div class="print-only" style="font-size:11px;color:var(--muted);margin-top:6px;">برای کپی شماره، روی متن لمس طولانی کنید.</div></div>' : ''}
     <div class="invoice-sign">
       <div class="sign-box">امضای فروشنده</div>
       <div class="invoice-brand"><img src="${BRAND_LOGO_DATA_URI}" alt="شهد شیرین"><span>شهد شیرین</span></div>
@@ -2359,6 +2442,30 @@ document.getElementById('printInvoiceBtn').addEventListener('click', ()=>{
   if(!s) return;
   document.getElementById('invoicePrintArea').innerHTML = '<div class="invoice-box">'+buildInvoiceHtml(s)+'</div>';
   window.print();
+});
+
+// کپی شماره‌های بانکی فاکتور: همیشه مقدار خام (بدون فاصله) در Clipboard قرار می‌گیرد
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.bank-copy-btn');
+  if(!btn) return;
+  const raw = btn.getAttribute('data-copy') || '';
+  const fallbackCopy = ()=>{
+    const ta = document.createElement('textarea');
+    ta.value = raw;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try{ document.execCommand('copy'); }catch(err){}
+    document.body.removeChild(ta);
+    showToast('کپی شد');
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(raw).then(()=>showToast('کپی شد')).catch(fallbackCopy);
+  } else {
+    fallbackCopy();
+  }
 });
 
 /* =========================================================
@@ -2408,8 +2515,8 @@ function addOrderLineItemRow(prefill){
         <input type="number" class="oi-qty" value="1" min="0" step="any">
       </div>
       <div>
-        <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">قیمت واحد</label>
-        <input type="number" class="oi-price" value="0" min="0" step="any">
+        <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">قیمت واحد (خودکار)</label>
+        <input type="number" class="oi-price" value="0" min="0" step="any" readonly style="background:#f1f5f9;">
       </div>
       <div>
         <label style="font-size:12px;color:var(--muted);margin:0 0 4px;">تخفیف</label>
@@ -2417,6 +2524,7 @@ function addOrderLineItemRow(prefill){
       </div>
     </div>
     <div class="li-amount">مبلغ ردیف: <span class="oi-amount-val">۰</span> تومان</div>
+    <div class="stock-warn price-warn hidden">قیمت فروش این کالا ثبت نشده است؛ ابتدا آن را در بخش «کالاها» تعیین کنید</div>
   `;
   wrap.appendChild(row);
 
@@ -2424,26 +2532,30 @@ function addOrderLineItemRow(prefill){
   const qtyInp = row.querySelector('.oi-qty');
   const priceInp = row.querySelector('.oi-price');
   const discInp = row.querySelector('.oi-discount');
+  const warnEl = row.querySelector('.price-warn');
+
+  function syncPriceFromProduct(){
+    const p = appData.products.find(x=>x.id===productSel.value);
+    const price = p ? (Number(p.salePrice) || 0) : 0;
+    priceInp.value = price;
+    warnEl.classList.toggle('hidden', price > 0);
+    calcOrderSummary();
+  }
 
   if(prefill){
     productSel.value = prefill.productId;
     qtyInp.value = prefill.qty;
     priceInp.value = prefill.unitPrice;
     discInp.value = prefill.discount || 0;
-  } else if(productSel.value){
-    const p = appData.products.find(x=>x.id===productSel.value);
-    if(p) priceInp.value = p.salePrice || 0;
+    warnEl.classList.toggle('hidden', Number(prefill.unitPrice) > 0);
+  } else {
+    syncPriceFromProduct();
   }
 
   row.querySelector('.li-remove').addEventListener('click', ()=>{ row.remove(); calcOrderSummary(); });
   qtyInp.addEventListener('input', calcOrderSummary);
-  priceInp.addEventListener('input', calcOrderSummary);
   discInp.addEventListener('input', calcOrderSummary);
-  productSel.addEventListener('change', ()=>{
-    const p = appData.products.find(x=>x.id===productSel.value);
-    if(p) priceInp.value = p.salePrice || 0;
-    calcOrderSummary();
-  });
+  productSel.addEventListener('change', syncPriceFromProduct);
 
   calcOrderSummary();
 }
@@ -2521,6 +2633,7 @@ document.getElementById('orderForm').addEventListener('submit', (e)=>{
     const discount = Number(row.querySelector('.oi-discount').value) || 0;
     if(!productId){ showToast('کالا را برای همه ردیف‌ها انتخاب کنید'); return; }
     if(qty <= 0){ showToast('مقدار سفارش باید بزرگ‌تر از صفر باشد'); return; }
+    if(unitPrice <= 0){ showToast('قیمت فروش این کالا ثبت نشده است؛ ابتدا آن را در بخش «کالاها» تعیین کنید'); return; }
     if(unitPrice < 0 || discount < 0){ showToast('قیمت و تخفیف نمی‌توانند منفی باشند'); return; }
     if(discount > qty * unitPrice){ showToast('تخفیف نمی‌تواند بیشتر از مبلغ ردیف باشد'); return; }
     items.push({ productId, qty, unitPrice, discount, amount: Math.max(0, qty*unitPrice - discount) });
